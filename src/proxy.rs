@@ -3,13 +3,14 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio_tungstenite::tungstenite::client::IntoClientRequest;
 
 #[derive(clap::Parser)]
-pub(crate) struct ProxyInvocation {
+pub(crate) struct ProxyArguments {
     /// wss:// URL to proxy through
+    #[command()]
     ws_url: String,
 }
 
-pub(crate) async fn proxy(invocation: ProxyInvocation) {
-    let request = url::Url::parse(&invocation.ws_url)
+pub(crate) async fn proxy(args: ProxyArguments) {
+    let request = url::Url::parse(&args.ws_url)
         .expect("valid url")
         .into_client_request()
         .expect("valid ws url");
