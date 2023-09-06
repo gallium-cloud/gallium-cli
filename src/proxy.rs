@@ -9,7 +9,7 @@ pub(crate) struct ProxyArguments {
     ws_url: String,
 }
 
-pub(crate) async fn proxy(args: ProxyArguments) {
+pub(crate) async fn proxy(args: &ProxyArguments) {
     let request = url::Url::parse(&args.ws_url)
         .expect("valid url")
         .into_client_request()
@@ -42,10 +42,7 @@ pub(crate) async fn proxy(args: ProxyArguments) {
                 .write_all(&msg.into_data())
                 .await
                 .expect("write to stdout");
-            stdout
-                .flush()
-                .await
-                .expect("flush stdout");
+            stdout.flush().await.expect("flush stdout");
         }
     });
 
