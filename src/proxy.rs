@@ -42,11 +42,15 @@ pub(crate) async fn proxy(args: ProxyArguments) {
                 .write_all(&msg.into_data())
                 .await
                 .expect("write to stdout");
+            stdout
+                .flush()
+                .await
+                .expect("flush stdout");
         }
     });
 
     tokio::select! {
-        _ = i => println!("EOF on stdin"),
-        _ = o => println!("EOF on websocket in"),
+        _ = i => eprintln!("EOF on stdin"),
+        _ = o => eprintln!("EOF on websocket in"),
     };
 }
