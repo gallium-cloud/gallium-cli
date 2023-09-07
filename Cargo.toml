@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = { version = "1.0.75" }
-clap = { version = "4.3.17", features = ["derive"] }
+clap = { version = "4.3.17", features = ["cargo", "derive"] }
 dialoguer = { version = "0.10.4" }
 duct = { version = "0.13.6" }
 futures-util = { version = "0.3" }

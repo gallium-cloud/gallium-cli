@@ -114,6 +114,7 @@ async fn post_login(
             ("password", password),
             ("otp", otp),
         ]))
+        .header("Gallium-CLI", clap::crate_version!())
         .send()
         .await?;
 
@@ -137,6 +138,7 @@ async fn post_token(api_root_url: &String, refresh_token: &String) -> anyhow::Re
             "refreshToken",
             refresh_token,
         )]))
+        .header("Gallium-CLI", clap::crate_version!())
         .send()
         .await?;
 

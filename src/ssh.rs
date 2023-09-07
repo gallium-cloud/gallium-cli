@@ -63,11 +63,19 @@ async fn get_ws_url(
             reqwest::header::AUTHORIZATION,
             format!("Bearer {}", access_token.to_string()),
         )
+        .header("Gallium-CLI", clap::crate_version!())
         .send()
         .await?;
 
     if !response.status().is_success() {
         anyhow::bail!(response.text().await.unwrap());
+    }
+
+    if let Some(msg) = response.headers().get("X-Gallium-Cli-Msg") {
+        eprintln!(
+            "{}",
+            std::str::from_utf8(msg.as_bytes()).expect("utf-8 msg header")
+        );
     }
 
     Ok(response.json::<WsResponse>().await?.url)
