@@ -3,11 +3,9 @@ use std::io::Write;
 use tokio::io::AsyncWriteExt;
 
 #[derive(serde::Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 struct LoginResponse {
-    #[serde(rename = "mfaRequired")]
     mfa_required: bool,
-
-    #[serde(rename = "refreshToken")]
     refresh_token: Option<String>,
 }
 
