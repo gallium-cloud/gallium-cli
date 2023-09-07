@@ -2,13 +2,6 @@ use std::io::Write;
 
 use tokio::io::AsyncWriteExt;
 
-#[derive(clap::Parser)]
-pub(crate) struct LoginArguments {
-    /// root URL of the gallium API server
-    #[arg(long, default_value = "https://api-staging.gallium.cloud/api")]
-    api_root_url: String,
-}
-
 #[derive(serde::Deserialize, Debug)]
 struct LoginResponse {
     #[serde(rename = "mfaRequired")]
@@ -82,7 +75,7 @@ fn prompt_and_read_line(prompt: &str) -> String {
     buffer.trim().into()
 }
 
-pub(crate) async fn login(args: LoginArguments) {
+pub(crate) async fn login(args: &crate::GlobalArguments) {
     let email = prompt_and_read_line("email");
     let password = prompt_and_read_line("password");
 
