@@ -63,26 +63,25 @@ async fn post_token(api_root_url: &String, refresh_token: &String) -> anyhow::Re
     Ok(response.json::<TokenResponse>().await?.access_token)
 }
 
-fn prompt_and_read_line(prompt: &str) -> String {
-    print!("{}: ", prompt);
-    std::io::stdout().flush().expect("flush stdout");
-    let mut buffer = String::new();
-    std::io::stdin()
-        .read_line(&mut buffer)
-        .expect("read line from stdin");
-    buffer.trim().into()
-}
-
 pub(crate) async fn login(args: &crate::GlobalArguments) {
-    let email = prompt_and_read_line("email");
-    let password = prompt_and_read_line("password");
+    let email: String = dialoguer::Input::new()
+        .with_prompt("email")
+        .interact_text()
+        .expect("email address");
+    let password: String = dialoguer::Password::new()
+        .with_prompt("password")
+        .interact()
+        .expect("password");
 
     let mut login_response = post_login(&args.api_root_url, &email, &password, &String::from(""))
         .await
         .expect("login attempt");
 
     while login_response.mfa_required {
-        let otp = prompt_and_read_line("one-time password from your authenticator");
+        let otp: String = dialoguer::Input::new()
+            .with_prompt("one-time password from your authenticator")
+            .interact_text()
+            .expect("otp");
         login_response = post_login(&args.api_root_url, &email, &password, &otp)
             .await
             .expect("login attempt");
