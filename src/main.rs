@@ -43,7 +43,7 @@ async fn main() {
     };
 
     let _access_token = match crate::login::get_access_token(&invocation.gargs.api_root_url).await {
-        Ok(t) => t,
+        Ok(access_token) => access_token,
         Err(_) => {
             println!(
                 "Ooops, you're not logged-in. Try `{:?} login`",

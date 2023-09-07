@@ -10,18 +10,27 @@ pub(crate) async fn login(args: &crate::GlobalArguments) {
         .interact()
         .expect("password");
 
-    let mut login_response = post_login(&args.api_root_url, &email, &password, &String::from(""))
-        .await
-        .expect("login attempt");
+    let mut login_response =
+        match post_login(&args.api_root_url, &email, &password, &String::from("")).await {
+            Ok(login_response) => login_response,
+            Err(_) => {
+                eprintln!("wrong email or password!");
+                return;
+            }
+        };
 
     while login_response.mfa_required {
         let otp: String = dialoguer::Input::new()
             .with_prompt("one-time password from your authenticator")
             .interact_text()
             .expect("otp");
-        login_response = post_login(&args.api_root_url, &email, &password, &otp)
-            .await
-            .expect("login attempt");
+        login_response = match post_login(&args.api_root_url, &email, &password, &otp).await {
+            Ok(login_response) => login_response,
+            Err(_) => {
+                eprintln!("wrong email, password or one-time password!");
+                return;
+            }
+        };
     }
 
     let refresh_token = login_response.refresh_token.expect("refresh token");
