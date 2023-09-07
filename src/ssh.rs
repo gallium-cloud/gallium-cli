@@ -32,7 +32,7 @@ pub(crate) async fn ssh(gargs: &crate::GlobalArguments, args: &SshArguments) {
         .args([
             String::from("-o"),
             format!(
-                "ProxyCommand={} proxy {}",
+                "ProxyCommand={} proxy \"{}\"",
                 std::env::current_exe().unwrap().display(),
                 ws_url
             ),
