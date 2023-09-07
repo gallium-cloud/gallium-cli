@@ -1,5 +1,3 @@
-use std::os::unix::process::CommandExt;
-
 #[derive(clap::Parser)]
 pub(crate) struct SshArguments {
     destination: String,
@@ -18,28 +16,32 @@ pub(crate) async fn ssh(gargs: &crate::GlobalArguments, args: &SshArguments) {
         .await
         .expect("access token");
 
-    let ws_url = get_ws_url(
-        &gargs.api_root_url,
-        &access_token,
-        &host,
-        // TODO 2023.09.06: should this be possible to override? If so, what's the syntax?
-        "22",
-    )
-    .await
-    .expect("ws url");
+    let ws_url = get_ws_url(&gargs.api_root_url, &access_token, &host, "22")
+        .await
+        .expect("ws url");
 
-    std::process::Command::new("ssh")
-        .args([
+    let output = duct::cmd(
+        "ssh",
+        vec![
             String::from("-o"),
             format!(
                 "ProxyCommand={} proxy \"{}\"",
                 std::env::current_exe().unwrap().display(),
                 ws_url
             ),
-        ])
-        .args(args.additional_ssh_args.clone())
-        .arg(args.destination.clone())
-        .exec();
+        ]
+        .into_iter()
+        .chain(args.additional_ssh_args.clone())
+        .chain(std::iter::once(args.destination.clone())),
+    )
+    .unchecked()
+    .run()
+    .expect("ssh run");
+
+    if let Some(code) = output.status.code() {
+        std::process::exit(code);
+    }
+    std::process::exit(1);
 }
 
 #[derive(serde::Deserialize, Debug)]
