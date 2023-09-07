@@ -37,7 +37,7 @@ async fn main() {
     match invocation.action {
         Some(Action::Proxy(args)) => return crate::proxy::proxy(&args).await,
         Some(Action::Login) => return crate::login::login(&invocation.gargs).await,
-        Some(Action::Logout) => return crate::login::logout().await,
+        Some(Action::Logout) => return crate::login::logout(&invocation.gargs).await,
         Some(Action::Ssh(args)) => return crate::ssh::ssh(&invocation.gargs, &args).await,
         _ => (),
     };
