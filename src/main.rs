@@ -37,13 +37,13 @@ async fn main() {
     match invocation.action {
         Some(Action::Proxy(args)) => return crate::proxy::proxy(&args).await,
         Some(Action::Login) => return crate::login::login(&invocation.gargs).await,
-        Some(Action::Logout) => return crate::login::logout().await,
+        Some(Action::Logout) => return crate::login::logout(&invocation.gargs).await,
         Some(Action::Ssh(args)) => return crate::ssh::ssh(&invocation.gargs, &args).await,
         _ => (),
     };
 
     let _access_token = match crate::login::get_access_token(&invocation.gargs.api_root_url).await {
-        Ok(t) => t,
+        Ok(access_token) => access_token,
         Err(_) => {
             println!(
                 "Ooops, you're not logged-in. Try `{:?} login`",

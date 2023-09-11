@@ -1,5 +1,3 @@
-use std::os::unix::process::CommandExt;
-
 #[derive(clap::Parser)]
 pub(crate) struct SshArguments {
     destination: String,
@@ -14,32 +12,47 @@ pub(crate) async fn ssh(gargs: &crate::GlobalArguments, args: &SshArguments) {
         None => args.destination.as_str(),
     };
 
-    let access_token = crate::login::get_access_token(&gargs.api_root_url)
-        .await
-        .expect("access token");
+    let access_token = match crate::login::get_access_token(&gargs.api_root_url).await {
+        Ok(access_token) => access_token,
+        Err(_) => {
+            eprintln!(
+                "Ooops, you're not logged-in. Try `{:?} login`",
+                std::env::current_exe().unwrap()
+            );
+            return;
+        }
+    };
 
-    let ws_url = get_ws_url(
-        &gargs.api_root_url,
-        &access_token,
-        &host,
-        // TODO 2023.09.06: should this be possible to override? If so, what's the syntax?
-        "22",
-    )
-    .await
-    .expect("ws url");
+    let ws_url = match get_ws_url(&gargs.api_root_url, &access_token, &host, "22").await {
+        Ok(ws_url) => ws_url,
+        Err(e) => {
+            eprintln!("Something went wrong: {:?}", e);
+            return;
+        }
+    };
 
-    std::process::Command::new("ssh")
-        .args([
+    let output = duct::cmd(
+        "ssh",
+        vec![
             String::from("-o"),
             format!(
                 "ProxyCommand={} proxy \"{}\"",
                 std::env::current_exe().unwrap().display(),
                 ws_url
             ),
-        ])
-        .args(args.additional_ssh_args.clone())
-        .arg(args.destination.clone())
-        .exec();
+        ]
+        .into_iter()
+        .chain(args.additional_ssh_args.clone())
+        .chain(std::iter::once(args.destination.clone())),
+    )
+    .unchecked()
+    .run()
+    .expect("ssh run");
+
+    if let Some(code) = output.status.code() {
+        std::process::exit(code);
+    }
+    std::process::exit(1);
 }
 
 #[derive(serde::Deserialize, Debug)]
@@ -61,11 +74,19 @@ async fn get_ws_url(
             reqwest::header::AUTHORIZATION,
             format!("Bearer {}", access_token.to_string()),
         )
+        .header("Gallium-CLI", clap::crate_version!())
         .send()
         .await?;
 
     if !response.status().is_success() {
         anyhow::bail!(response.text().await.unwrap());
+    }
+
+    if let Some(msg) = response.headers().get("X-Gallium-Cli-Msg") {
+        eprintln!(
+            "{}",
+            std::str::from_utf8(msg.as_bytes()).expect("utf-8 msg header")
+        );
     }
 
     Ok(response.json::<WsResponse>().await?.url)
