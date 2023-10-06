@@ -18,7 +18,7 @@ struct Invocation {
 
 #[derive(clap::Args)]
 struct GlobalArguments {
-    #[arg(long, default_value = "https://api.gallium.cloud/api", hide=true)]
+    #[arg(long, default_value = "https://api.gallium.cloud/api", hide = true)]
     api_root_url: String,
 
     /// Optionally specify the org slug of the organisation containing the instance you wish to connect to.
