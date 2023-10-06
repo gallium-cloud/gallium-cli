@@ -15,8 +15,11 @@ struct Invocation {
 
 #[derive(clap::Args)]
 struct GlobalArguments {
-    #[arg(long, default_value = "https://api-staging.gallium.cloud/api")]
+    #[arg(long, default_value = "https://api.gallium.cloud/api")]
     api_root_url: String,
+
+    #[arg(short, long, default_missing_value= Option::None)]
+    gallium_org: Option<String>,
 }
 
 #[derive(clap::Subcommand)]
@@ -42,7 +45,12 @@ async fn main() {
         _ => (),
     };
 
-    let _access_token = match crate::login::get_access_token(&invocation.gargs.api_root_url).await {
+    let _access_token = match crate::login::get_access_token(
+        &invocation.gargs.api_root_url,
+        &invocation.gargs.gallium_org,
+    )
+    .await
+    {
         Ok(access_token) => access_token,
         Err(_) => {
             println!(

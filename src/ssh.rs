@@ -12,16 +12,17 @@ pub(crate) async fn ssh(gargs: &crate::GlobalArguments, args: &SshArguments) {
         None => args.destination.as_str(),
     };
 
-    let access_token = match crate::login::get_access_token(&gargs.api_root_url).await {
-        Ok(access_token) => access_token,
-        Err(_) => {
-            eprintln!(
-                "Ooops, you're not logged-in. Try `{:?} login`",
-                std::env::current_exe().unwrap()
-            );
-            return;
-        }
-    };
+    let access_token =
+        match crate::login::get_access_token(&gargs.api_root_url, &gargs.gallium_org).await {
+            Ok(access_token) => access_token,
+            Err(_) => {
+                eprintln!(
+                    "Ooops, you're not logged-in. Try `{:?} login`",
+                    std::env::current_exe().unwrap()
+                );
+                return;
+            }
+        };
 
     let ws_url = match get_ws_url(&gargs.api_root_url, &access_token, &host, "22").await {
         Ok(ws_url) => ws_url,

@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use tokio::io::AsyncWriteExt;
 
 pub(crate) async fn login(args: &crate::GlobalArguments) {
@@ -52,15 +53,22 @@ pub(crate) async fn logout(args: &crate::GlobalArguments) {
     write_dotfile(&dotfile).await;
 }
 
-pub(crate) async fn get_access_token(api_root_url: &String) -> anyhow::Result<String> {
+pub(crate) async fn get_access_token(
+    api_root_url: &String,
+    org_param: &Option<String>,
+) -> anyhow::Result<String> {
     let refresh_token = read_dotfile()
         .await
         .refresh_tokens
         .get(api_root_url)
         .ok_or(anyhow::anyhow!("no refresh token available"))?
         .clone();
+    let mut params = HashMap::from([("refreshToken", refresh_token)]);
+    if let Some(org) = org_param {
+        params.insert("orgSlug", org.clone());
+    }
 
-    post_token(api_root_url, &refresh_token).await
+    post_token(api_root_url, &params).await
 }
 
 fn dotfile_path() -> String {
@@ -140,13 +148,13 @@ struct TokenResponse {
     access_token: String,
 }
 
-async fn post_token(api_root_url: &String, refresh_token: &String) -> anyhow::Result<String> {
+async fn post_token(
+    api_root_url: &String,
+    params: &HashMap<&str, String>,
+) -> anyhow::Result<String> {
     let response = reqwest::Client::new()
         .post(format!("{}/token", api_root_url))
-        .json(&std::collections::HashMap::from([(
-            "refreshToken",
-            refresh_token,
-        )]))
+        .json(&params)
         .header("Gallium-CLI", clap::crate_version!())
         .send()
         .await?;
