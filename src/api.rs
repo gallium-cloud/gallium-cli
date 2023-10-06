@@ -13,6 +13,13 @@ pub struct LoginResponse {
     pub refresh_token: Option<String>,
 }
 
+#[derive(serde::Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct ErrorResponse {
+    pub error: String,
+    pub err_code: String,
+}
+
 pub async fn post_token(
     api_root_url: &String,
     params: &HashMap<&str, String>,
@@ -36,7 +43,7 @@ pub async fn post_login(
     email: &String,
     password: &String,
     otp: &String,
-) -> anyhow::Result<LoginResponse> {
+) -> anyhow::Result<Result<LoginResponse, ErrorResponse>> {
     let response = reqwest::Client::new()
         .post(format!("{}/login", api_root_url))
         .json(&std::collections::HashMap::from([
@@ -49,8 +56,8 @@ pub async fn post_login(
         .await?;
 
     if !response.status().is_success() {
-        anyhow::bail!(response.text().await.unwrap());
+        Ok(Err(response.json::<ErrorResponse>().await?))
+    } else {
+        Ok(Ok(response.json::<LoginResponse>().await?))
     }
-
-    Ok(response.json::<LoginResponse>().await?)
 }

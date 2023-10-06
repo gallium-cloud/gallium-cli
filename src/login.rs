@@ -14,9 +14,13 @@ pub(crate) async fn login(args: &crate::GlobalArguments) {
 
     let mut login_response =
         match api::post_login(&args.api_root_url, &email, &password, &String::from("")).await {
-            Ok(login_response) => login_response,
-            Err(_) => {
-                eprintln!("wrong email or password!");
+            Ok(Ok(login_response)) => login_response,
+            Ok(Err(e)) => {
+                eprintln!("Error logging in: {}", e.error);
+                return;
+            }
+            Err(e) => {
+                eprintln!("Couldn't connect to API: {:?}", e);
                 return;
             }
         };
@@ -27,9 +31,13 @@ pub(crate) async fn login(args: &crate::GlobalArguments) {
             .interact_text()
             .expect("otp");
         login_response = match api::post_login(&args.api_root_url, &email, &password, &otp).await {
-            Ok(login_response) => login_response,
-            Err(_) => {
-                eprintln!("wrong email, password or one-time password!");
+            Ok(Ok(login_response)) => login_response,
+            Ok(Err(e)) => {
+                eprintln!("Error logging in: {}", e.error);
+                return;
+            }
+            Err(e) => {
+                eprintln!("Couldn't connect to API: {:?}", e);
                 return;
             }
         };
