@@ -1,5 +1,6 @@
 use clap::Parser;
 
+mod api;
 mod login;
 mod proxy;
 mod ssh;

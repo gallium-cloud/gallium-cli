@@ -1,3 +1,4 @@
+use crate::api;
 use std::collections::HashMap;
 use tokio::io::AsyncWriteExt;
 
@@ -12,7 +13,7 @@ pub(crate) async fn login(args: &crate::GlobalArguments) {
         .expect("password");
 
     let mut login_response =
-        match post_login(&args.api_root_url, &email, &password, &String::from("")).await {
+        match api::post_login(&args.api_root_url, &email, &password, &String::from("")).await {
             Ok(login_response) => login_response,
             Err(_) => {
                 eprintln!("wrong email or password!");
@@ -25,7 +26,7 @@ pub(crate) async fn login(args: &crate::GlobalArguments) {
             .with_prompt("one-time password from your authenticator")
             .interact_text()
             .expect("otp");
-        login_response = match post_login(&args.api_root_url, &email, &password, &otp).await {
+        login_response = match api::post_login(&args.api_root_url, &email, &password, &otp).await {
             Ok(login_response) => login_response,
             Err(_) => {
                 eprintln!("wrong email, password or one-time password!");
@@ -68,7 +69,7 @@ pub(crate) async fn get_access_token(
         params.insert("orgSlug", org.clone());
     }
 
-    post_token(api_root_url, &params).await
+    api::post_token(api_root_url, &params).await
 }
 
 fn dotfile_path() -> String {
@@ -109,59 +110,4 @@ async fn write_dotfile(dotfile: &Dotfile) {
         )
         .await
         .expect("write to dotfile")
-}
-
-#[derive(serde::Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-struct LoginResponse {
-    mfa_required: bool,
-    refresh_token: Option<String>,
-}
-
-async fn post_login(
-    api_root_url: &String,
-    email: &String,
-    password: &String,
-    otp: &String,
-) -> anyhow::Result<LoginResponse> {
-    let response = reqwest::Client::new()
-        .post(format!("{}/login", api_root_url))
-        .json(&std::collections::HashMap::from([
-            ("email", email),
-            ("password", password),
-            ("otp", otp),
-        ]))
-        .header("Gallium-CLI", clap::crate_version!())
-        .send()
-        .await?;
-
-    if !response.status().is_success() {
-        anyhow::bail!(response.text().await.unwrap());
-    }
-
-    Ok(response.json::<LoginResponse>().await?)
-}
-
-#[derive(serde::Deserialize, Debug)]
-struct TokenResponse {
-    #[serde(rename = "accessToken")]
-    access_token: String,
-}
-
-async fn post_token(
-    api_root_url: &String,
-    params: &HashMap<&str, String>,
-) -> anyhow::Result<String> {
-    let response = reqwest::Client::new()
-        .post(format!("{}/token", api_root_url))
-        .json(&params)
-        .header("Gallium-CLI", clap::crate_version!())
-        .send()
-        .await?;
-
-    if !response.status().is_success() {
-        anyhow::bail!(response.text().await.unwrap());
-    }
-
-    Ok(response.json::<TokenResponse>().await?.access_token)
 }
