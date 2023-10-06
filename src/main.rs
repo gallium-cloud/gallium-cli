@@ -6,6 +6,8 @@ mod proxy;
 mod ssh;
 
 #[derive(clap::Parser)]
+#[command(version, arg_required_else_help = true)]
+
 struct Invocation {
     #[command(flatten)]
     gargs: GlobalArguments,
@@ -16,9 +18,10 @@ struct Invocation {
 
 #[derive(clap::Args)]
 struct GlobalArguments {
-    #[arg(long, default_value = "https://api.gallium.cloud/api")]
+    #[arg(long, default_value = "https://api.gallium.cloud/api", hide=true)]
     api_root_url: String,
 
+    /// Optionally specify the org slug of the organisation containing the instance you wish to connect to.
     #[arg(short, long, default_missing_value= Option::None)]
     gallium_org: Option<String>,
 }
@@ -28,9 +31,12 @@ enum Action {
     #[clap(hide = true)]
     Proxy(crate::proxy::ProxyArguments),
 
+    /// Login to your Gallium account
     Login,
+    /// Clear saved login token
     Logout,
 
+    /// SSH to an instance on a Gallium server
     Ssh(crate::ssh::SshArguments),
 }
 
@@ -61,6 +67,4 @@ async fn main() {
             return;
         }
     };
-
-    println!("you're logged in... but I don't do anything, yet.");
 }
