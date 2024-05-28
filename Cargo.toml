@@ -6,15 +6,15 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-anyhow = { version = "1.0.75" }
-clap = { version = "4.4.6", features = ["cargo", "derive"] }
+anyhow = { version = "1.0.86" }
+clap = { version = "=4.4.18", features = ["cargo", "derive"] }
 dialoguer = { version = "0.10.4" }
-duct = { version = "0.13.6" }
+duct = { version = "0.13.7" }
 futures-util = { version = "0.3" }
-home = { version = "0.5.3" }
-reqwest = { version = "0.11.22", features = ["json", "rustls-tls", "rustls-tls-webpki-roots"], default-features = false }
-serde = { version = "1.0.188", features = ["derive"] }
-serde_json = { version = "1.0.107" }
-tokio = { version = "1.32.0", features = ["rt", "rt-multi-thread", "macros", "io-std", "fs"] }
+home = { version = "0.5.5" }
+reqwest = { version = "0.11.27", features = ["json", "rustls-tls", "rustls-tls-webpki-roots"], default-features = false }
+serde = { version = "1.0.203", features = ["derive"] }
+serde_json = { version = "1.0.117" }
+tokio = { version = "1.37.0", features = ["rt", "rt-multi-thread", "macros", "io-std", "fs"] }
 tokio-tungstenite = { version = "0.20.1", features = ["rustls-tls-webpki-roots", "stream", "connect"], default-features = false }
-url = { version = "2.4.1" }
+url = { version = "2.5.0" }
