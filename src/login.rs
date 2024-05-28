@@ -1,5 +1,6 @@
 use crate::api;
 use std::collections::HashMap;
+use std::path::PathBuf;
 use tokio::io::AsyncWriteExt;
 
 pub(crate) async fn login(args: &crate::GlobalArguments) {
@@ -80,12 +81,10 @@ pub(crate) async fn get_access_token(
     api::post_token(api_root_url, &params).await
 }
 
-fn dotfile_path() -> String {
+fn dotfile_path() -> PathBuf {
     let mut buf = home::home_dir().expect("home dir");
     buf.push(".gallium-cli.json");
-    buf.into_os_string()
-        .into_string()
-        .expect("dotfile path isn't unicode (!!!!!)")
+    buf
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Default)]
