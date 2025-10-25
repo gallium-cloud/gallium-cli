@@ -61,7 +61,7 @@ async fn main() {
         Ok(access_token) => access_token,
         Err(_) => {
             println!(
-                "Ooops, you're not logged-in. Try `{:?} login`",
+                "Oops, you're not logged-in. Try `{:?} login`",
                 std::env::current_exe().unwrap()
             );
             return;

@@ -1,6 +1,5 @@
 use futures_util::{SinkExt, StreamExt};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio_tungstenite::tungstenite::client::IntoClientRequest;
 
 #[derive(clap::Parser)]
 pub(crate) struct ProxyArguments {
@@ -10,11 +9,7 @@ pub(crate) struct ProxyArguments {
 }
 
 pub(crate) async fn proxy(args: &ProxyArguments) {
-    let request = url::Url::parse(&args.ws_url)
-        .expect("valid url")
-        .into_client_request()
-        .expect("valid ws url");
-    let (ws_stream, _) = tokio_tungstenite::connect_async(request)
+    let (ws_stream, _) = tokio_tungstenite::connect_async(&args.ws_url)
         .await
         .expect("websocket connection");
 
@@ -29,7 +24,7 @@ pub(crate) async fn proxy(args: &ProxyArguments) {
             }
             stream_out
                 .send(tokio_tungstenite::tungstenite::protocol::Message::binary(
-                    &mut buffer[..n],
+                    buffer[..n].to_vec(),
                 ))
                 .await
                 .expect("write to stream");

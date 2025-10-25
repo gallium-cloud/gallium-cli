@@ -15,6 +15,7 @@ pub struct LoginResponse {
 
 #[derive(serde::Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
+#[allow(dead_code)]
 pub struct ErrorResponse {
     pub error: String,
     pub err_code: String,
