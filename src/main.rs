@@ -7,7 +7,6 @@ mod ssh;
 
 #[derive(clap::Parser)]
 #[command(version, arg_required_else_help = true)]
-
 struct Invocation {
     #[command(flatten)]
     gargs: GlobalArguments,
