@@ -8,7 +8,7 @@ pub(crate) struct SshArguments {
     additional_ssh_args: Vec<String>,
 }
 
-pub(crate) async fn ssh(gargs: &crate::GlobalArguments, args: &SshArguments) {
+pub(crate) async fn ssh(gargs: &crate::args::GlobalArguments, args: &SshArguments) {
     let host = match args.destination.split_once('@') {
         Some((_, host)) => host,
         None => args.destination.as_str(),

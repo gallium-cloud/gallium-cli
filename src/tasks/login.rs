@@ -2,7 +2,7 @@ use crate::api;
 use crate::helpers::dotfile::{read_dotfile, write_dotfile};
 use std::collections::HashMap;
 
-pub(crate) async fn login(args: &crate::GlobalArguments) {
+pub(crate) async fn login(args: &crate::args::GlobalArguments) {
     let email: String = dialoguer::Input::new()
         .with_prompt("email")
         .interact_text()
@@ -57,7 +57,7 @@ pub(crate) async fn login(args: &crate::GlobalArguments) {
     write_dotfile(&dotfile).await;
 }
 
-pub(crate) async fn logout(args: &crate::GlobalArguments) {
+pub(crate) async fn logout(args: &crate::args::GlobalArguments) {
     let mut dotfile = read_dotfile().await;
 
     dotfile.refresh_tokens.remove(&args.api_root_url);
