@@ -14,7 +14,9 @@ pub(crate) async fn login(args: &crate::GlobalArguments) {
         .expect("password");
 
     let mut login_response =
-        match api::post_login(&args.api_root_url, &email, &password, &String::from("")).await {
+        match api::login_api::post_login(&args.api_root_url, &email, &password, &String::from(""))
+            .await
+        {
             Ok(Ok(login_response)) => login_response,
             Ok(Err(e)) => {
                 eprintln!("Error logging in: {}", e.error.unwrap_or("(null)".into()));
@@ -31,17 +33,18 @@ pub(crate) async fn login(args: &crate::GlobalArguments) {
             .with_prompt("one-time password from your authenticator")
             .interact_text()
             .expect("otp");
-        login_response = match api::post_login(&args.api_root_url, &email, &password, &otp).await {
-            Ok(Ok(login_response)) => login_response,
-            Ok(Err(e)) => {
-                eprintln!("Error logging in: {}", e.error.unwrap_or("(null)".into()));
-                return;
-            }
-            Err(e) => {
-                eprintln!("Couldn't connect to API: {:?}", e);
-                return;
-            }
-        };
+        login_response =
+            match api::login_api::post_login(&args.api_root_url, &email, &password, &otp).await {
+                Ok(Ok(login_response)) => login_response,
+                Ok(Err(e)) => {
+                    eprintln!("Error logging in: {}", e.error.unwrap_or("(null)".into()));
+                    return;
+                }
+                Err(e) => {
+                    eprintln!("Couldn't connect to API: {:?}", e);
+                    return;
+                }
+            };
     }
 
     let refresh_token = login_response.refresh_token.expect("refresh token");
@@ -78,7 +81,7 @@ pub(crate) async fn get_access_token(
         params.insert("orgSlug", org.clone());
     }
 
-    api::post_token(api_root_url, &params).await
+    api::login_api::post_token(api_root_url, &params).await
 }
 
 fn dotfile_path() -> PathBuf {
