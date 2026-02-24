@@ -1,9 +1,8 @@
 use clap::Parser;
 
 mod api;
-mod login;
-mod proxy;
-mod ssh;
+mod tasks;
+mod tasks_internal;
 
 #[derive(clap::Parser)]
 #[command(version, arg_required_else_help = true)]
@@ -28,7 +27,7 @@ struct GlobalArguments {
 #[derive(clap::Subcommand)]
 enum Action {
     #[clap(hide = true)]
-    Proxy(crate::proxy::ProxyArguments),
+    Proxy(crate::tasks_internal::proxy::ProxyArguments),
 
     /// Login to your Gallium account
     Login,
@@ -36,7 +35,7 @@ enum Action {
     Logout,
 
     /// SSH to an instance on a Gallium server
-    Ssh(crate::ssh::SshArguments),
+    Ssh(crate::tasks::ssh::SshArguments),
 }
 
 #[tokio::main]
@@ -44,14 +43,14 @@ async fn main() {
     let invocation = Invocation::parse();
 
     match invocation.action {
-        Some(Action::Proxy(args)) => return crate::proxy::proxy(&args).await,
-        Some(Action::Login) => return crate::login::login(&invocation.gargs).await,
-        Some(Action::Logout) => return crate::login::logout(&invocation.gargs).await,
-        Some(Action::Ssh(args)) => return crate::ssh::ssh(&invocation.gargs, &args).await,
+        Some(Action::Proxy(args)) => return crate::tasks_internal::proxy::proxy(&args).await,
+        Some(Action::Login) => return crate::tasks::login::login(&invocation.gargs).await,
+        Some(Action::Logout) => return crate::tasks::login::logout(&invocation.gargs).await,
+        Some(Action::Ssh(args)) => return crate::tasks::ssh::ssh(&invocation.gargs, &args).await,
         _ => (),
     };
 
-    let _access_token = match crate::login::get_access_token(
+    let _access_token = match crate::tasks::login::get_access_token(
         &invocation.gargs.api_root_url,
         &invocation.gargs.gallium_org,
     )
