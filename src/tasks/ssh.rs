@@ -1,3 +1,6 @@
+use crate::api::vm_service_api::entities::VncUrlResponse;
+use anyhow::anyhow;
+
 #[derive(clap::Parser)]
 pub(crate) struct SshArguments {
     destination: String,
@@ -60,11 +63,6 @@ pub(crate) async fn ssh(gargs: &crate::GlobalArguments, args: &SshArguments) {
     std::process::exit(1);
 }
 
-#[derive(serde::Deserialize, Debug)]
-struct WsResponse {
-    url: String,
-}
-
 async fn get_ws_url(
     api_root_url: impl ToString,
     access_token: impl ToString,
@@ -94,5 +92,9 @@ async fn get_ws_url(
         );
     }
 
-    Ok(response.json::<WsResponse>().await?.url)
+    response
+        .json::<VncUrlResponse>()
+        .await?
+        .url
+        .ok_or_else(|| anyhow!("get_ws_url response missing url"))
 }

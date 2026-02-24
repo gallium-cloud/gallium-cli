@@ -17,7 +17,7 @@ pub(crate) async fn login(args: &crate::GlobalArguments) {
         match api::post_login(&args.api_root_url, &email, &password, &String::from("")).await {
             Ok(Ok(login_response)) => login_response,
             Ok(Err(e)) => {
-                eprintln!("Error logging in: {}", e.error);
+                eprintln!("Error logging in: {}", e.error.unwrap_or("(null)".into()));
                 return;
             }
             Err(e) => {
@@ -34,7 +34,7 @@ pub(crate) async fn login(args: &crate::GlobalArguments) {
         login_response = match api::post_login(&args.api_root_url, &email, &password, &otp).await {
             Ok(Ok(login_response)) => login_response,
             Ok(Err(e)) => {
-                eprintln!("Error logging in: {}", e.error);
+                eprintln!("Error logging in: {}", e.error.unwrap_or("(null)".into()));
                 return;
             }
             Err(e) => {
