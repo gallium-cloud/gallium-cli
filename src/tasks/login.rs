@@ -20,28 +20,22 @@ pub(crate) async fn login(args: &crate::args::GlobalArguments) {
         refresh_token: None,
     };
 
-    let mut login_response =
-        match api::login_api::post_login(&args.api_root_url, &login_request).await {
-            Ok(Ok(login_response)) => login_response,
-            Ok(Err(e)) => {
-                eprintln!("Error logging in: {}", e.error.unwrap_or("(null)".into()));
-                return;
-            }
-            Err(e) => {
-                eprintln!("Couldn't connect to API: {:?}", e);
-                return;
-            }
-        };
+    let login_response;
 
-    while login_response.mfa_required {
-        login_request.otp = dialoguer::Input::new()
-            .with_prompt("one-time password from your authenticator")
-            .interact_text()
-            .map(Some)
-            .expect("otp");
-        login_response = match api::login_api::post_login(&args.api_root_url, &login_request).await
-        {
-            Ok(Ok(login_response)) => login_response,
+    loop {
+        match api::login_api::post_login(&args.api_root_url, &login_request).await {
+            Ok(Ok(resp)) => {
+                if resp.mfa_required {
+                    login_request.otp = dialoguer::Input::new()
+                        .with_prompt("one-time password from your authenticator")
+                        .interact_text()
+                        .map(Some)
+                        .expect("otp");
+                } else {
+                    login_response = resp;
+                    break;
+                }
+            }
             Ok(Err(e)) => {
                 eprintln!("Error logging in: {}", e.error.unwrap_or("(null)".into()));
                 return;
