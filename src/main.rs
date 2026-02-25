@@ -1,5 +1,7 @@
 use crate::args::{Action, Invocation};
 use crate::helpers::auth::get_login_response_for_saved_credentials;
+use crate::helpers::env::current_exe;
+use crate::task_common::error::TaskError;
 use clap::Parser;
 
 mod api;
@@ -10,7 +12,8 @@ mod tasks;
 mod tasks_internal;
 
 #[tokio::main(flavor = "current_thread")]
-async fn main() {
+#[snafu::report]
+async fn main() -> Result<(), TaskError> {
     let invocation = Invocation::parse();
 
     match invocation.action {
@@ -34,12 +37,11 @@ async fn main() {
                 Err(_) => {
                     println!(
                         "Oops, you're not logged-in. Try `{:?} login`",
-                        std::env::current_exe().unwrap()
+                        current_exe()?
                     );
                 }
             };
             Ok(())
         }
     }
-    .unwrap();
 }

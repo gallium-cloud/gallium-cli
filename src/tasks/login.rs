@@ -19,7 +19,7 @@ pub(crate) async fn login(args: &crate::args::GlobalArguments) -> Result<(), Tas
         refresh_token: None,
     };
 
-    let login_api = args.build_api_client().unwrap().login_api();
+    let login_api = args.build_api_client()?.login_api();
 
     let login_response;
 

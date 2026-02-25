@@ -1,6 +1,7 @@
 use crate::api::vm_service_api::entities::GetWsUrlForVmServiceQueryParams;
 use crate::helpers::auth::get_login_response_for_saved_credentials;
 
+use crate::helpers::env::current_exe;
 use crate::task_common::error::TaskError;
 use snafu::prelude::*;
 
@@ -48,7 +49,7 @@ pub(crate) async fn ssh(
             String::from("-o"),
             format!(
                 "ProxyCommand={} proxy \"{}\"",
-                std::env::current_exe().unwrap().display(),
+                current_exe()?.display(),
                 ws_url
             ),
         ]

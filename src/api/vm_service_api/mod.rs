@@ -30,11 +30,12 @@ impl VmServiceApi {
             .send()
             .await?;
 
-        if let Some(msg) = response.headers().get("X-Gallium-Cli-Msg") {
-            eprintln!(
-                "{}",
-                std::str::from_utf8(msg.as_bytes()).expect("utf-8 msg header")
-            );
+        if let Some(msg) = response
+            .headers()
+            .get("X-Gallium-Cli-Msg")
+            .and_then(|h| h.to_str().ok())
+        {
+            eprintln!("{msg}");
         }
 
         if response.status().is_success() {
