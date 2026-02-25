@@ -1,4 +1,5 @@
 use crate::api::ApiClient;
+use crate::task_common::error::TaskError;
 use std::sync::Arc;
 
 #[derive(clap::Parser)]
@@ -40,7 +41,12 @@ impl GlobalArguments {
         self.api_url.strip_suffix("/").unwrap_or(&self.api_url)
     }
 
-    pub fn build_api_client(&self) -> anyhow::Result<Arc<ApiClient>> {
-        Ok(ApiClient::new(self.get_api_url().try_into()?))
+    pub fn build_api_client(&self) -> Result<Arc<ApiClient>, TaskError> {
+        Ok(ApiClient::new(self.get_api_url().try_into().map_err(
+            |e: url::ParseError| TaskError::Initialize {
+                name: "api client",
+                source: Box::new(e),
+            },
+        )?))
     }
 }

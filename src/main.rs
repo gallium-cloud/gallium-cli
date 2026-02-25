@@ -17,7 +17,11 @@ async fn main() {
         Some(Action::Proxy(args)) => return crate::tasks_internal::proxy::proxy(&args).await,
         Some(Action::Login) => return crate::tasks::login::login(&invocation.gargs).await.unwrap(),
         Some(Action::Logout) => return crate::tasks::login::logout(&invocation.gargs).await,
-        Some(Action::Ssh(args)) => return crate::tasks::ssh::ssh(&invocation.gargs, &args).await,
+        Some(Action::Ssh(args)) => {
+            return crate::tasks::ssh::ssh(&invocation.gargs, &args)
+                .await
+                .unwrap()
+        }
         _ => (),
     };
 

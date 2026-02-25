@@ -1,6 +1,8 @@
 use crate::api::vm_service_api::entities::GetWsUrlForVmServiceQueryParams;
 use crate::helpers::auth::get_login_response_for_saved_credentials;
-use anyhow::anyhow;
+
+use crate::task_common::error::TaskError;
+use snafu::prelude::*;
 
 #[derive(clap::Parser)]
 pub(crate) struct SshArguments {
@@ -10,31 +12,25 @@ pub(crate) struct SshArguments {
     additional_ssh_args: Vec<String>,
 }
 
-pub(crate) async fn ssh(gargs: &crate::args::GlobalArguments, args: &SshArguments) {
+pub(crate) async fn ssh(
+    gargs: &crate::args::GlobalArguments,
+    args: &SshArguments,
+) -> Result<(), TaskError> {
     let host = match args.destination.split_once('@') {
         Some((_, host)) => host,
         None => args.destination.as_str(),
     };
 
-    let access_token = match get_login_response_for_saved_credentials(gargs)
-        .await
-        .and_then(|resp| {
-            resp.access_token
-                .ok_or_else(|| anyhow!("API returned null accessToken"))
-        }) {
-        Ok(access_token) => access_token,
-        Err(_) => {
-            eprintln!(
-                "Ooops, you're not logged-in. Try `{:?} login`",
-                std::env::current_exe().unwrap()
-            );
-            return;
-        }
-    };
+    let access_token = get_login_response_for_saved_credentials(gargs)
+        .await?
+        .access_token
+        .ok_or_else(|| TaskError::ApiResponseMissingField {
+            field: "accessToken",
+        })?;
 
-    let vm_service_api = gargs.build_api_client().unwrap().vm_service_api();
+    let vm_service_api = gargs.build_api_client()?.vm_service_api();
 
-    let ws_url = match vm_service_api
+    let ws_url = vm_service_api
         .get_ws_url_for_vm_service(
             &access_token,
             &GetWsUrlForVmServiceQueryParams {
@@ -42,14 +38,9 @@ pub(crate) async fn ssh(gargs: &crate::args::GlobalArguments, args: &SshArgument
                 port: "22".into(),
             },
         )
-        .await
-    {
-        Ok(ws_url) => ws_url.url.expect("get_ws_url response missing url"),
-        Err(e) => {
-            eprintln!("Something went wrong: {:?}", e);
-            return;
-        }
-    };
+        .await?
+        .url
+        .ok_or_else(|| TaskError::ApiResponseMissingField { field: "ws:URL" })?;
 
     let output = duct::cmd(
         "ssh",
@@ -67,10 +58,11 @@ pub(crate) async fn ssh(gargs: &crate::args::GlobalArguments, args: &SshArgument
     )
     .unchecked()
     .run()
-    .expect("ssh run");
+    .whatever_context::<_, TaskError>("ssh run")?;
 
     if let Some(code) = output.status.code() {
         std::process::exit(code);
+    } else {
+        std::process::exit(1);
     }
-    std::process::exit(1);
 }
