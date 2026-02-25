@@ -50,7 +50,7 @@ pub(crate) async fn login(args: &crate::args::GlobalArguments) -> Result<(), Tas
         .refresh_tokens
         .insert(args.get_api_url().to_string(), refresh_token);
 
-    write_dotfile(&dotfile).await;
+    write_dotfile(&dotfile).await?;
 
     Ok(())
 }
@@ -60,6 +60,7 @@ pub(crate) async fn logout(args: &crate::args::GlobalArguments) -> Result<(), Ta
 
     dotfile.refresh_tokens.remove(args.get_api_url());
 
-    write_dotfile(&dotfile).await;
+    write_dotfile(&dotfile).await?;
+
     Ok(())
 }

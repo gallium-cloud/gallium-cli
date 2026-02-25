@@ -1,13 +1,13 @@
 use crate::task_common::error::TaskError;
-use snafu::ResultExt;
+use snafu::{OptionExt, ResultExt};
 use std::path::PathBuf;
 use tokio::fs;
-use tokio::io::AsyncWriteExt;
 
-fn dotfile_path() -> PathBuf {
-    let mut buf = home::home_dir().expect("home dir");
-    buf.push(".gallium-cli.json");
-    buf
+fn dotfile_path() -> Result<PathBuf, TaskError> {
+    let mut path_buf =
+        home::home_dir().whatever_context::<_, TaskError>("resolve home directory")?;
+    path_buf.push(".gallium-cli.json");
+    Ok(path_buf)
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Default)]
@@ -16,11 +16,11 @@ pub struct Dotfile {
 }
 
 pub async fn read_dotfile() -> Result<Dotfile, TaskError> {
-    if fs::try_exists(&dotfile_path())
+    if fs::try_exists(&dotfile_path()?)
         .await
         .whatever_context::<_, TaskError>("check for existing dotfile")?
     {
-        let dotfile_json = fs::read(dotfile_path())
+        let dotfile_json = fs::read(dotfile_path()?)
             .await
             .whatever_context::<_, TaskError>("read dotfile")?;
 
@@ -30,19 +30,11 @@ pub async fn read_dotfile() -> Result<Dotfile, TaskError> {
     }
 }
 
-pub async fn write_dotfile(dotfile: &Dotfile) {
-    tokio::fs::OpenOptions::new()
-        .write(true)
-        .truncate(true)
-        .create(true)
-        .open(dotfile_path())
+pub async fn write_dotfile(dotfile: &Dotfile) -> Result<(), TaskError> {
+    let dotfile_json =
+        serde_json::to_vec(dotfile).whatever_context::<_, TaskError>("serialize dotfile")?;
+    fs::write(dotfile_path()?, dotfile_json)
         .await
-        .expect("open dotfile")
-        .write_all(
-            serde_json::to_string(dotfile)
-                .expect("able to serialize dotfile to json")
-                .as_bytes(),
-        )
-        .await
-        .expect("write to dotfile")
+        .whatever_context::<_, TaskError>("write dotfile")?;
+    Ok(())
 }
