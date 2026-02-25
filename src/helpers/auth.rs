@@ -8,7 +8,7 @@ pub(crate) async fn get_login_response_for_saved_credentials(
     global_args: &GlobalArguments,
 ) -> Result<GalliumLoginResponse, TaskError> {
     let refresh_token = read_dotfile()
-        .await
+        .await?
         .refresh_tokens
         .get(global_args.get_api_url())
         .whatever_context::<_, TaskError>("no refresh token available")?

@@ -1,4 +1,7 @@
+use crate::task_common::error::TaskError;
+use snafu::ResultExt;
 use std::path::PathBuf;
+use tokio::fs;
 use tokio::io::AsyncWriteExt;
 
 fn dotfile_path() -> PathBuf {
@@ -12,14 +15,19 @@ pub struct Dotfile {
     pub refresh_tokens: std::collections::HashMap<String, String>,
 }
 
-pub async fn read_dotfile() -> Dotfile {
-    tokio::fs::read_to_string(dotfile_path())
+pub async fn read_dotfile() -> Result<Dotfile, TaskError> {
+    if fs::try_exists(&dotfile_path())
         .await
-        .as_ref()
-        .map_or_else(
-            |_| Dotfile::default(),
-            |contents| serde_json::from_str(contents).expect("valid json in the dotfile"),
-        )
+        .whatever_context::<_, TaskError>("check for existing dotfile")?
+    {
+        let dotfile_json = fs::read(dotfile_path())
+            .await
+            .whatever_context::<_, TaskError>("read dotfile")?;
+
+        serde_json::from_slice(&dotfile_json).whatever_context("parse dotfile")
+    } else {
+        Ok(Dotfile::default())
+    }
 }
 
 pub async fn write_dotfile(dotfile: &Dotfile) {

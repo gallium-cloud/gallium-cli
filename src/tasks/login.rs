@@ -44,7 +44,7 @@ pub(crate) async fn login(args: &crate::args::GlobalArguments) -> Result<(), Tas
                 field: "refreshToken",
             })?;
 
-    let mut dotfile = read_dotfile().await;
+    let mut dotfile = read_dotfile().await?;
 
     dotfile
         .refresh_tokens
@@ -55,10 +55,11 @@ pub(crate) async fn login(args: &crate::args::GlobalArguments) -> Result<(), Tas
     Ok(())
 }
 
-pub(crate) async fn logout(args: &crate::args::GlobalArguments) {
-    let mut dotfile = read_dotfile().await;
+pub(crate) async fn logout(args: &crate::args::GlobalArguments) -> Result<(), TaskError> {
+    let mut dotfile = read_dotfile().await?;
 
     dotfile.refresh_tokens.remove(args.get_api_url());
 
     write_dotfile(&dotfile).await;
+    Ok(())
 }
