@@ -14,7 +14,9 @@ async fn main() {
     let invocation = Invocation::parse();
 
     match invocation.action {
-        Some(Action::Proxy(args)) => return crate::tasks_internal::proxy::proxy(&args).await,
+        Some(Action::Proxy(args)) => {
+            return crate::tasks_internal::proxy::proxy(&args).await.unwrap()
+        }
         Some(Action::Login) => return crate::tasks::login::login(&invocation.gargs).await.unwrap(),
         Some(Action::Logout) => {
             return crate::tasks::login::logout(&invocation.gargs)
