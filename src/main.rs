@@ -21,12 +21,7 @@ async fn main() {
     };
 
     //TODO: on windows, double-clicking the EXE from the file browser will result in a console window that immediately closes
-    match get_login_response_for_saved_credentials(
-        invocation.gargs.get_api_url(),
-        &invocation.gargs.gallium_org,
-    )
-    .await
-    {
+    match get_login_response_for_saved_credentials(&invocation.gargs).await {
         Ok(login_resp) => {
             if let Some(org) = login_resp.org {
                 println!("Logged in to Gallium org: {}", org.name);
