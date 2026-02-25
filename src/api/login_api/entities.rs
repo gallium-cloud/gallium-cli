@@ -4,6 +4,13 @@
 
 use serde::{Deserialize, Serialize};
 
+/// Response for invalidateRefreshToken POST /api/token/invalidate
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GalliumApiSuccessResponse {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+
 // =============================================================================
 // POST /api/login login
 // Login
@@ -80,12 +87,4 @@ pub struct GalliumTokenRequest {
     pub org_slug: Option<String>,
     #[serde(rename = "refreshToken")]
     pub refresh_token: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct OtherLink {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub url: Option<String>,
 }
