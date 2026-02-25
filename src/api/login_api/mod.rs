@@ -24,7 +24,7 @@ impl LoginApi {
         if response.status().is_success() {
             Ok(response.json::<GalliumLoginResponse>().await?)
         } else {
-            Err(ApiClientError::ApiError {
+            Err(ApiClientError::Api {
                 error: response.json::<GalliumApiErrorResponse>().await?,
             })
         }
@@ -44,7 +44,7 @@ impl LoginApi {
         if response.status().is_success() {
             Ok(response.json::<GalliumLoginResponse>().await?)
         } else {
-            Err(ApiClientError::ApiError {
+            Err(ApiClientError::Api {
                 error: response.json::<GalliumApiErrorResponse>().await?,
             })
         }

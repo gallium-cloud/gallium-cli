@@ -37,7 +37,7 @@ pub(crate) async fn login(args: &crate::args::GlobalArguments) {
                     break;
                 }
             }
-            Err(ApiClientError::ApiError { error }) => {
+            Err(ApiClientError::Api { error }) => {
                 eprintln!(
                     "Error logging in: {}",
                     error.error.unwrap_or("(null)".into())

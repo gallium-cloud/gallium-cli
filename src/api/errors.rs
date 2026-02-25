@@ -4,7 +4,7 @@ use snafu::prelude::*;
 #[derive(Debug, Snafu)]
 pub enum ApiClientError {
     #[snafu(display("API Error: {:?}", error))]
-    ApiError { error: GalliumApiErrorResponse },
+    Api { error: GalliumApiErrorResponse },
     #[snafu(transparent)]
-    RequestError { source: reqwest::Error },
+    Request { source: reqwest::Error },
 }
