@@ -3,30 +3,28 @@ pub mod entities;
 
 use crate::api::common_api::entities::GalliumApiErrorResponse;
 use crate::api::errors::ApiClientError;
-use crate::api::login_api::entities::{GalliumLoginRequest, GalliumLoginResponse};
-use anyhow::anyhow;
-use std::collections::HashMap;
+use crate::api::login_api::entities::{
+    GalliumLoginRequest, GalliumLoginResponse, GalliumTokenRequest,
+};
 
 pub async fn post_token(
     api_root_url: &String,
-    params: &HashMap<&str, String>,
-) -> anyhow::Result<String> {
+    token_request: &GalliumTokenRequest,
+) -> Result<GalliumLoginResponse, ApiClientError> {
     let response = reqwest::Client::new()
         .post(format!("{}/token", api_root_url))
-        .json(&params)
+        .json(&token_request)
         .header("Gallium-CLI", clap::crate_version!())
         .send()
         .await?;
 
-    if !response.status().is_success() {
-        anyhow::bail!(response.text().await.unwrap());
+    if response.status().is_success() {
+        Ok(response.json::<GalliumLoginResponse>().await?)
+    } else {
+        Err(ApiClientError::ApiError {
+            error: response.json::<GalliumApiErrorResponse>().await?,
+        })
     }
-
-    response
-        .json::<GalliumLoginResponse>()
-        .await?
-        .access_token
-        .ok_or_else(|| anyhow!("null access_token"))
 }
 
 pub async fn post_login(
