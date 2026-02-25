@@ -11,7 +11,7 @@ pub struct Invocation {
 #[derive(clap::Args)]
 pub struct GlobalArguments {
     #[arg(long, default_value = "https://api.gallium.cloud/api", hide = true)]
-    pub api_root_url: String,
+    api_url: String,
 
     /// Optionally specify the org slug of the organisation containing the instance you wish to connect to.
     #[arg(short, long, default_missing_value= Option::None)]
@@ -30,4 +30,10 @@ pub enum Action {
 
     /// SSH to an instance on a Gallium server
     Ssh(crate::tasks::ssh::SshArguments),
+}
+
+impl GlobalArguments {
+    pub fn get_api_url(&self) -> &str {
+        self.api_url.as_str()
+    }
 }

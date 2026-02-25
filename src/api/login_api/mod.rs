@@ -8,7 +8,7 @@ use crate::api::login_api::entities::{
 };
 
 pub async fn post_token(
-    api_root_url: &String,
+    api_root_url: &str,
     token_request: &GalliumTokenRequest,
 ) -> Result<GalliumLoginResponse, ApiClientError> {
     let response = reqwest::Client::new()
@@ -28,7 +28,7 @@ pub async fn post_token(
 }
 
 pub async fn post_login(
-    api_root_url: &String,
+    api_root_url: &str,
     login_request: &GalliumLoginRequest,
 ) -> Result<GalliumLoginResponse, ApiClientError> {
     let response = reqwest::Client::new()

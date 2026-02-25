@@ -24,7 +24,7 @@ pub(crate) async fn login(args: &crate::args::GlobalArguments) {
     let login_response;
 
     loop {
-        match api::login_api::post_login(&args.api_root_url, &login_request).await {
+        match api::login_api::post_login(args.get_api_url(), &login_request).await {
             Ok(resp) => {
                 if resp.mfa_required {
                     login_request.otp = dialoguer::Input::new()
@@ -57,7 +57,7 @@ pub(crate) async fn login(args: &crate::args::GlobalArguments) {
 
     dotfile
         .refresh_tokens
-        .insert(args.api_root_url.clone(), refresh_token);
+        .insert(args.get_api_url().to_string(), refresh_token);
 
     write_dotfile(&dotfile).await;
 }
@@ -65,13 +65,13 @@ pub(crate) async fn login(args: &crate::args::GlobalArguments) {
 pub(crate) async fn logout(args: &crate::args::GlobalArguments) {
     let mut dotfile = read_dotfile().await;
 
-    dotfile.refresh_tokens.remove(&args.api_root_url);
+    dotfile.refresh_tokens.remove(args.get_api_url());
 
     write_dotfile(&dotfile).await;
 }
 
 pub(crate) async fn get_access_token(
-    api_root_url: &String,
+    api_root_url: &str,
     org_param: &Option<String>,
 ) -> anyhow::Result<String> {
     let refresh_token = read_dotfile()

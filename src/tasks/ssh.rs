@@ -15,7 +15,7 @@ pub(crate) async fn ssh(gargs: &crate::args::GlobalArguments, args: &SshArgument
     };
 
     let access_token = match crate::tasks::login::get_access_token(
-        &gargs.api_root_url,
+        gargs.get_api_url(),
         &gargs.gallium_org,
     )
     .await
@@ -30,7 +30,7 @@ pub(crate) async fn ssh(gargs: &crate::args::GlobalArguments, args: &SshArgument
         }
     };
 
-    let ws_url = match get_ws_url(&gargs.api_root_url, &access_token, &host, "22").await {
+    let ws_url = match get_ws_url(gargs.get_api_url(), &access_token, &host, "22").await {
         Ok(ws_url) => ws_url,
         Err(e) => {
             eprintln!("Something went wrong: {:?}", e);

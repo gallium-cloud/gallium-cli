@@ -20,7 +20,7 @@ async fn main() {
     };
 
     let _access_token = match crate::tasks::login::get_access_token(
-        &invocation.gargs.api_root_url,
+        invocation.gargs.get_api_url(),
         &invocation.gargs.gallium_org,
     )
     .await
