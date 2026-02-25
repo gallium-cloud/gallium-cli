@@ -4,7 +4,8 @@ pub mod entities;
 use crate::api::common_api::entities::GalliumApiErrorResponse;
 use crate::api::errors::ApiClientError;
 use crate::api::login_api::entities::{
-    GalliumLoginRequest, GalliumLoginResponse, GalliumTokenRequest,
+    GalliumApiSuccessResponse, GalliumLoginRequest, GalliumLoginResponse, GalliumTokenRequest,
+    InvalidateTokenRequest,
 };
 use crate::api::ApiClient;
 use derive_more::Constructor;
@@ -49,6 +50,26 @@ impl LoginApi {
 
         if response.status().is_success() {
             Ok(response.json::<GalliumLoginResponse>().await?)
+        } else {
+            Err(ApiClientError::Api {
+                error: response.json::<GalliumApiErrorResponse>().await?,
+            })
+        }
+    }
+
+    pub async fn invalidate_refresh_token(
+        &self,
+        invalidate_request: &InvalidateTokenRequest,
+    ) -> Result<GalliumApiSuccessResponse, ApiClientError> {
+        let response = reqwest::Client::new()
+            .post(self.api_client.api_url.join("/api/token/invalidate")?)
+            .json(invalidate_request)
+            .header("Gallium-CLI", clap::crate_version!())
+            .send()
+            .await?;
+
+        if response.status().is_success() {
+            Ok(response.json::<GalliumApiSuccessResponse>().await?)
         } else {
             Err(ApiClientError::Api {
                 error: response.json::<GalliumApiErrorResponse>().await?,

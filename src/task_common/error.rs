@@ -5,6 +5,11 @@ use snafu::prelude::*;
 pub enum TaskError {
     #[snafu(display("Missing or invalid input for {field}"))]
     UserInputInvalid { field: &'static str },
+    #[snafu(display("Invalid state for {command}: {reason}"))]
+    InvalidStateForCommand {
+        command: &'static str,
+        reason: String,
+    },
     #[snafu(transparent)]
     ApiClientError { source: ApiClientError },
     #[snafu(display("API Response missing expected field: {field}"))]
