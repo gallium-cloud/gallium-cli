@@ -1,4 +1,6 @@
+use crate::task_common::error::TaskError;
 use futures_util::{SinkExt, StreamExt};
+use snafu::prelude::*;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 #[derive(clap::Parser)]
@@ -8,10 +10,10 @@ pub(crate) struct ProxyArguments {
     ws_url: String,
 }
 
-pub(crate) async fn proxy(args: &ProxyArguments) {
+pub(crate) async fn proxy(args: &ProxyArguments) -> Result<(), TaskError> {
     let (ws_stream, _) = tokio_tungstenite::connect_async(&args.ws_url)
         .await
-        .expect("websocket connection");
+        .whatever_context::<_, TaskError>("websocket connection failed")?;
 
     let (mut stream_out, mut stream_in) = ws_stream.split();
 
@@ -26,23 +28,31 @@ pub(crate) async fn proxy(args: &ProxyArguments) {
                 .send(tokio_tungstenite::tungstenite::protocol::Message::binary(
                     buffer[..n].to_vec(),
                 ))
-                .await
-                .expect("write to stream");
+                .await?;
         }
+        Ok::<(), tokio_tungstenite::tungstenite::Error>(())
     });
     let o = tokio::task::spawn(async move {
         let mut stdout = tokio::io::stdout();
         while let Some(Ok(msg)) = stream_in.next().await {
-            stdout
-                .write_all(&msg.into_data())
-                .await
-                .expect("write to stdout");
-            stdout.flush().await.expect("flush stdout");
+            stdout.write_all(&msg.into_data()).await?;
+            stdout.flush().await?;
         }
+        Ok::<(), std::io::Error>(())
     });
 
     tokio::select! {
-        _ = i => eprintln!("EOF on stdin"),
-        _ = o => eprintln!("EOF on websocket in"),
+        result = i => {
+            result
+                .whatever_context::<_, TaskError>("stdin proxy task panicked")?
+                .whatever_context::<_, TaskError>("writing to websocket")?;
+        }
+        result = o => {
+            result
+                .whatever_context::<_, TaskError>("stdout proxy task panicked")?
+                .whatever_context::<_, TaskError>("writing to stdout")?;
+        }
     };
+
+    Ok(())
 }

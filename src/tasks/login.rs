@@ -1,84 +1,66 @@
-use crate::api;
+use crate::api::login_api::entities::GalliumLoginRequest;
 use crate::helpers::dotfile::{read_dotfile, write_dotfile};
-use std::collections::HashMap;
+use crate::task_common::error::TaskError;
 
-pub(crate) async fn login(args: &crate::args::GlobalArguments) {
+pub(crate) async fn login(args: &crate::args::GlobalArguments) -> Result<(), TaskError> {
     let email: String = dialoguer::Input::new()
         .with_prompt("email")
         .interact_text()
-        .expect("email address");
+        .map_err(|_| TaskError::UserInputInvalid { field: "email" })?;
     let password: String = dialoguer::Password::new()
         .with_prompt("password")
         .interact()
-        .expect("password");
+        .map_err(|_| TaskError::UserInputInvalid { field: "password" })?;
 
-    let mut login_response =
-        match api::login_api::post_login(&args.api_root_url, &email, &password, &String::from(""))
-            .await
-        {
-            Ok(Ok(login_response)) => login_response,
-            Ok(Err(e)) => {
-                eprintln!("Error logging in: {}", e.error.unwrap_or("(null)".into()));
-                return;
-            }
-            Err(e) => {
-                eprintln!("Couldn't connect to API: {:?}", e);
-                return;
-            }
-        };
+    let mut login_request = GalliumLoginRequest {
+        email: email.clone(),
+        password: password.clone(),
+        otp: None,
+        refresh_token: None,
+    };
 
-    while login_response.mfa_required {
-        let otp: String = dialoguer::Input::new()
-            .with_prompt("one-time password from your authenticator")
-            .interact_text()
-            .expect("otp");
-        login_response =
-            match api::login_api::post_login(&args.api_root_url, &email, &password, &otp).await {
-                Ok(Ok(login_response)) => login_response,
-                Ok(Err(e)) => {
-                    eprintln!("Error logging in: {}", e.error.unwrap_or("(null)".into()));
-                    return;
-                }
-                Err(e) => {
-                    eprintln!("Couldn't connect to API: {:?}", e);
-                    return;
-                }
-            };
+    let login_api = args.build_api_client()?.login_api();
+
+    let login_response;
+
+    loop {
+        let resp = login_api.login(&login_request).await?;
+        if resp.mfa_required {
+            login_request.otp = dialoguer::Input::new()
+                .with_prompt("one-time password from your authenticator")
+                .interact_text()
+                .map(Some)
+                .map_err(|_| TaskError::UserInputInvalid { field: "otp" })?;
+        } else {
+            login_response = resp;
+            break;
+        }
     }
 
-    let refresh_token = login_response.refresh_token.expect("refresh token");
+    let refresh_token =
+        login_response
+            .refresh_token
+            .ok_or_else(|| TaskError::ApiResponseMissingField {
+                field: "refreshToken",
+            })?;
 
-    let mut dotfile = read_dotfile().await;
+    let mut dotfile = read_dotfile().await?;
 
     dotfile
         .refresh_tokens
-        .insert(args.api_root_url.clone(), refresh_token);
+        .insert(args.get_api_url().to_string(), refresh_token);
 
-    write_dotfile(&dotfile).await;
+    write_dotfile(&dotfile).await?;
+
+    Ok(())
 }
 
-pub(crate) async fn logout(args: &crate::args::GlobalArguments) {
-    let mut dotfile = read_dotfile().await;
+pub(crate) async fn logout(args: &crate::args::GlobalArguments) -> Result<(), TaskError> {
+    let mut dotfile = read_dotfile().await?;
 
-    dotfile.refresh_tokens.remove(&args.api_root_url);
+    dotfile.refresh_tokens.remove(args.get_api_url());
 
-    write_dotfile(&dotfile).await;
-}
+    write_dotfile(&dotfile).await?;
 
-pub(crate) async fn get_access_token(
-    api_root_url: &String,
-    org_param: &Option<String>,
-) -> anyhow::Result<String> {
-    let refresh_token = read_dotfile()
-        .await
-        .refresh_tokens
-        .get(api_root_url)
-        .ok_or(anyhow::anyhow!("no refresh token available"))?
-        .clone();
-    let mut params = HashMap::from([("refreshToken", refresh_token)]);
-    if let Some(org) = org_param {
-        params.insert("orgSlug", org.clone());
-    }
-
-    api::login_api::post_token(api_root_url, &params).await
+    Ok(())
 }

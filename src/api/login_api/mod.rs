@@ -2,53 +2,57 @@
 pub mod entities;
 
 use crate::api::common_api::entities::GalliumApiErrorResponse;
-use crate::api::login_api::entities::{GalliumLoginRequest, GalliumLoginResponse};
-use anyhow::anyhow;
-use std::collections::HashMap;
+use crate::api::errors::ApiClientError;
+use crate::api::login_api::entities::{
+    GalliumLoginRequest, GalliumLoginResponse, GalliumTokenRequest,
+};
+use crate::api::ApiClient;
+use derive_more::Constructor;
+use std::sync::Arc;
 
-pub async fn post_token(
-    api_root_url: &String,
-    params: &HashMap<&str, String>,
-) -> anyhow::Result<String> {
-    let response = reqwest::Client::new()
-        .post(format!("{}/token", api_root_url))
-        .json(&params)
-        .header("Gallium-CLI", clap::crate_version!())
-        .send()
-        .await?;
-
-    if !response.status().is_success() {
-        anyhow::bail!(response.text().await.unwrap());
-    }
-
-    response
-        .json::<GalliumLoginResponse>()
-        .await?
-        .access_token
-        .ok_or_else(|| anyhow!("null access_token"))
+#[derive(Constructor)]
+pub struct LoginApi {
+    api_client: Arc<ApiClient>,
 }
 
-pub async fn post_login(
-    api_root_url: &String,
-    email: &String,
-    password: &String,
-    otp: &String,
-) -> anyhow::Result<Result<GalliumLoginResponse, GalliumApiErrorResponse>> {
-    let response = reqwest::Client::new()
-        .post(format!("{}/login", api_root_url))
-        .json(&GalliumLoginRequest {
-            email: email.to_string(),
-            password: password.to_string(),
-            otp: Some(otp.to_string()),
-            refresh_token: None,
-        })
-        .header("Gallium-CLI", clap::crate_version!())
-        .send()
-        .await?;
+impl LoginApi {
+    pub async fn refresh_access_token(
+        &self,
+        token_request: &GalliumTokenRequest,
+    ) -> Result<GalliumLoginResponse, ApiClientError> {
+        let response = reqwest::Client::new()
+            .post(self.api_client.api_url.join("/api/token")?)
+            .json(&token_request)
+            .header("Gallium-CLI", clap::crate_version!())
+            .send()
+            .await?;
 
-    if !response.status().is_success() {
-        Ok(Err(response.json::<GalliumApiErrorResponse>().await?))
-    } else {
-        Ok(Ok(response.json::<GalliumLoginResponse>().await?))
+        if response.status().is_success() {
+            Ok(response.json::<GalliumLoginResponse>().await?)
+        } else {
+            Err(ApiClientError::Api {
+                error: response.json::<GalliumApiErrorResponse>().await?,
+            })
+        }
+    }
+
+    pub async fn login(
+        &self,
+        login_request: &GalliumLoginRequest,
+    ) -> Result<GalliumLoginResponse, ApiClientError> {
+        let response = reqwest::Client::new()
+            .post(self.api_client.api_url.join("/api/login")?)
+            .json(&login_request)
+            .header("Gallium-CLI", clap::crate_version!())
+            .send()
+            .await?;
+
+        if response.status().is_success() {
+            Ok(response.json::<GalliumLoginResponse>().await?)
+        } else {
+            Err(ApiClientError::Api {
+                error: response.json::<GalliumApiErrorResponse>().await?,
+            })
+        }
     }
 }
