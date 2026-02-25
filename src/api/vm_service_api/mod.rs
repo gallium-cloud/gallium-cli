@@ -1,4 +1,4 @@
-use crate::api::vm_service_api::entities::VncUrlResponse;
+use crate::api::vm_service_api::entities::{GetWsUrlForVmServiceQueryParams, VncUrlResponse};
 use anyhow::anyhow;
 
 #[allow(unused)]
@@ -7,16 +7,14 @@ pub mod entities;
 pub async fn get_ws_url(
     api_root_url: impl ToString,
     access_token: impl ToString,
-    host: impl ToString,
-    port: impl ToString,
+    params: &GetWsUrlForVmServiceQueryParams,
 ) -> anyhow::Result<String> {
     let response = reqwest::Client::new()
         .get(format!(
             "{}/api/ws/ws_for_vm_service",
             api_root_url.to_string()
         ))
-        .query(&[("host", host.to_string())])
-        .query(&[("port", port.to_string())])
+        .query(params)
         .header(
             reqwest::header::AUTHORIZATION,
             format!("Bearer {}", access_token.to_string()),
