@@ -19,7 +19,7 @@ async fn main() -> Result<(), TaskError> {
     match invocation.action {
         Some(Action::Proxy(args)) => crate::tasks_internal::proxy::proxy(&args).await,
         Some(Action::Login) => crate::tasks::login::login(&invocation.gargs).await,
-        Some(Action::Logout) => crate::tasks::login::logout(&invocation.gargs).await,
+        Some(Action::Logout) => crate::tasks::logout::logout(&invocation.gargs).await,
         Some(Action::Ssh(args)) => crate::tasks::ssh::ssh(&invocation.gargs, &args).await,
         None => {
             //TODO: on windows, double-clicking the EXE from the file browser will result in a console window that immediately closes
