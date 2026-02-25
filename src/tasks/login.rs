@@ -1,6 +1,6 @@
-use crate::api;
 use crate::api::errors::ApiClientError;
 use crate::api::login_api::entities::{GalliumLoginRequest, GalliumTokenRequest};
+use crate::api::login_api::LoginApi;
 use crate::helpers::dotfile::{read_dotfile, write_dotfile};
 use anyhow::anyhow;
 
@@ -24,7 +24,7 @@ pub(crate) async fn login(args: &crate::args::GlobalArguments) {
     let login_response;
 
     loop {
-        match api::login_api::post_login(args.get_api_url(), &login_request).await {
+        match LoginApi::login(args.get_api_url(), &login_request).await {
             Ok(resp) => {
                 if resp.mfa_required {
                     login_request.otp = dialoguer::Input::new()
@@ -81,7 +81,7 @@ pub(crate) async fn get_access_token(
         .ok_or(anyhow::anyhow!("no refresh token available"))?
         .clone();
 
-    api::login_api::post_token(
+    LoginApi::refresh_access_token(
         api_root_url,
         &GalliumTokenRequest {
             refresh_token,
