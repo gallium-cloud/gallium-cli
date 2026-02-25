@@ -30,18 +30,11 @@ pub async fn post_token(
 
 pub async fn post_login(
     api_root_url: &String,
-    email: &String,
-    password: &String,
-    otp: &String,
+    login_request: &GalliumLoginRequest,
 ) -> anyhow::Result<Result<GalliumLoginResponse, GalliumApiErrorResponse>> {
     let response = reqwest::Client::new()
         .post(format!("{}/login", api_root_url))
-        .json(&GalliumLoginRequest {
-            email: email.to_string(),
-            password: password.to_string(),
-            otp: Some(otp.to_string()),
-            refresh_token: None,
-        })
+        .json(&login_request)
         .header("Gallium-CLI", clap::crate_version!())
         .send()
         .await?;

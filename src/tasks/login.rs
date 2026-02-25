@@ -1,4 +1,5 @@
 use crate::api;
+use crate::api::login_api::entities::GalliumLoginRequest;
 use crate::helpers::dotfile::{read_dotfile, write_dotfile};
 use std::collections::HashMap;
 
@@ -12,10 +13,15 @@ pub(crate) async fn login(args: &crate::args::GlobalArguments) {
         .interact()
         .expect("password");
 
+    let mut login_request = GalliumLoginRequest {
+        email: email.clone(),
+        password: password.clone(),
+        otp: None,
+        refresh_token: None,
+    };
+
     let mut login_response =
-        match api::login_api::post_login(&args.api_root_url, &email, &password, &String::from(""))
-            .await
-        {
+        match api::login_api::post_login(&args.api_root_url, &login_request).await {
             Ok(Ok(login_response)) => login_response,
             Ok(Err(e)) => {
                 eprintln!("Error logging in: {}", e.error.unwrap_or("(null)".into()));
@@ -28,22 +34,23 @@ pub(crate) async fn login(args: &crate::args::GlobalArguments) {
         };
 
     while login_response.mfa_required {
-        let otp: String = dialoguer::Input::new()
+        login_request.otp = dialoguer::Input::new()
             .with_prompt("one-time password from your authenticator")
             .interact_text()
+            .map(Some)
             .expect("otp");
-        login_response =
-            match api::login_api::post_login(&args.api_root_url, &email, &password, &otp).await {
-                Ok(Ok(login_response)) => login_response,
-                Ok(Err(e)) => {
-                    eprintln!("Error logging in: {}", e.error.unwrap_or("(null)".into()));
-                    return;
-                }
-                Err(e) => {
-                    eprintln!("Couldn't connect to API: {:?}", e);
-                    return;
-                }
-            };
+        login_response = match api::login_api::post_login(&args.api_root_url, &login_request).await
+        {
+            Ok(Ok(login_response)) => login_response,
+            Ok(Err(e)) => {
+                eprintln!("Error logging in: {}", e.error.unwrap_or("(null)".into()));
+                return;
+            }
+            Err(e) => {
+                eprintln!("Couldn't connect to API: {:?}", e);
+                return;
+            }
+        };
     }
 
     let refresh_token = login_response.refresh_token.expect("refresh token");
