@@ -11,7 +11,10 @@ pub async fn get_ws_url(
     port: impl ToString,
 ) -> anyhow::Result<String> {
     let response = reqwest::Client::new()
-        .get(format!("{}/ws/ws_for_vm_service", api_root_url.to_string()))
+        .get(format!(
+            "{}/api/ws/ws_for_vm_service",
+            api_root_url.to_string()
+        ))
         .query(&[("host", host.to_string())])
         .query(&[("port", port.to_string())])
         .header(

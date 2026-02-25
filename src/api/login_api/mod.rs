@@ -12,7 +12,7 @@ pub async fn post_token(
     token_request: &GalliumTokenRequest,
 ) -> Result<GalliumLoginResponse, ApiClientError> {
     let response = reqwest::Client::new()
-        .post(format!("{}/token", api_root_url))
+        .post(format!("{}/api/token", api_root_url))
         .json(&token_request)
         .header("Gallium-CLI", clap::crate_version!())
         .send()
@@ -32,7 +32,7 @@ pub async fn post_login(
     login_request: &GalliumLoginRequest,
 ) -> Result<GalliumLoginResponse, ApiClientError> {
     let response = reqwest::Client::new()
-        .post(format!("{}/login", api_root_url))
+        .post(format!("{}/api/login", api_root_url))
         .json(&login_request)
         .header("Gallium-CLI", clap::crate_version!())
         .send()

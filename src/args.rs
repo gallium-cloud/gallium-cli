@@ -10,7 +10,7 @@ pub struct Invocation {
 
 #[derive(clap::Args)]
 pub struct GlobalArguments {
-    #[arg(long, default_value = "https://api.gallium.cloud/api", hide = true)]
+    #[arg(long, default_value = "https://api.gallium.cloud/", hide = true)]
     api_url: String,
 
     /// Optionally specify the org slug of the organisation containing the instance you wish to connect to.
@@ -34,6 +34,6 @@ pub enum Action {
 
 impl GlobalArguments {
     pub fn get_api_url(&self) -> &str {
-        self.api_url.as_str()
+        self.api_url.strip_suffix("/").unwrap_or(&self.api_url)
     }
 }
