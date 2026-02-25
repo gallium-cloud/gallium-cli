@@ -42,7 +42,7 @@ pub(crate) async fn ssh(gargs: &crate::args::GlobalArguments, args: &SshArgument
         )
         .await
     {
-        Ok(ws_url) => ws_url,
+        Ok(ws_url) => ws_url.url.expect("get_ws_url response missing url"),
         Err(e) => {
             eprintln!("Something went wrong: {:?}", e);
             return;

@@ -1,6 +1,7 @@
+use crate::api::common_api::entities::GalliumApiErrorResponse;
+use crate::api::errors::ApiClientError;
 use crate::api::vm_service_api::entities::{GetWsUrlForVmServiceQueryParams, VncUrlResponse};
 use crate::api::ApiClient;
-use anyhow::anyhow;
 use derive_more::Constructor;
 use std::sync::Arc;
 
@@ -17,7 +18,7 @@ impl VmServiceApi {
         &self,
         access_token: impl ToString,
         params: &GetWsUrlForVmServiceQueryParams,
-    ) -> anyhow::Result<String> {
+    ) -> Result<VncUrlResponse, ApiClientError> {
         let response = reqwest::Client::new()
             .get(self.api_client.api_url.join("/api/ws/ws_for_vm_service")?)
             .query(params)
@@ -29,10 +30,6 @@ impl VmServiceApi {
             .send()
             .await?;
 
-        if !response.status().is_success() {
-            anyhow::bail!(response.text().await.unwrap());
-        }
-
         if let Some(msg) = response.headers().get("X-Gallium-Cli-Msg") {
             eprintln!(
                 "{}",
@@ -40,10 +37,12 @@ impl VmServiceApi {
             );
         }
 
-        response
-            .json::<VncUrlResponse>()
-            .await?
-            .url
-            .ok_or_else(|| anyhow!("get_ws_url response missing url"))
+        if response.status().is_success() {
+            Ok(response.json::<VncUrlResponse>().await?)
+        } else {
+            Err(ApiClientError::Api {
+                error: response.json::<GalliumApiErrorResponse>().await?,
+            })
+        }
     }
 }

@@ -7,4 +7,6 @@ pub enum ApiClientError {
     Api { error: GalliumApiErrorResponse },
     #[snafu(transparent)]
     Request { source: reqwest::Error },
+    #[snafu(transparent)]
+    UrlParseError { source: url::ParseError },
 }
