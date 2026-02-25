@@ -1,8 +1,7 @@
 use crate::api::errors::ApiClientError;
-use crate::api::login_api::entities::{GalliumLoginRequest, GalliumTokenRequest};
+use crate::api::login_api::entities::GalliumLoginRequest;
 use crate::api::login_api::LoginApi;
 use crate::helpers::dotfile::{read_dotfile, write_dotfile};
-use anyhow::anyhow;
 
 pub(crate) async fn login(args: &crate::args::GlobalArguments) {
     let email: String = dialoguer::Input::new()
@@ -68,27 +67,4 @@ pub(crate) async fn logout(args: &crate::args::GlobalArguments) {
     dotfile.refresh_tokens.remove(args.get_api_url());
 
     write_dotfile(&dotfile).await;
-}
-
-pub(crate) async fn get_access_token(
-    api_root_url: &str,
-    org_param: &Option<String>,
-) -> anyhow::Result<String> {
-    let refresh_token = read_dotfile()
-        .await
-        .refresh_tokens
-        .get(api_root_url)
-        .ok_or(anyhow::anyhow!("no refresh token available"))?
-        .clone();
-
-    LoginApi::refresh_access_token(
-        api_root_url,
-        &GalliumTokenRequest {
-            refresh_token,
-            org_slug: org_param.clone(),
-        },
-    )
-    .await?
-    .access_token
-    .ok_or_else(|| anyhow!("API returned null accessToken"))
 }

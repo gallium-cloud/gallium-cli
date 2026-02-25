@@ -1,4 +1,6 @@
 use crate::args::{Action, Invocation};
+use crate::helpers::auth::get_login_response_for_saved_credentials;
+use anyhow::anyhow;
 use clap::Parser;
 
 mod api;
@@ -19,12 +21,15 @@ async fn main() {
         _ => (),
     };
 
-    let _access_token = match crate::tasks::login::get_access_token(
+    let _access_token = match get_login_response_for_saved_credentials(
         invocation.gargs.get_api_url(),
         &invocation.gargs.gallium_org,
     )
     .await
-    {
+    .and_then(|resp| {
+        resp.access_token
+            .ok_or_else(|| anyhow!("API returned null accessToken"))
+    }) {
         Ok(access_token) => access_token,
         Err(_) => {
             println!(

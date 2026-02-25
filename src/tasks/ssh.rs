@@ -1,4 +1,6 @@
 use crate::api::vm_service_api::entities::GetWsUrlForVmServiceQueryParams;
+use crate::helpers::auth::get_login_response_for_saved_credentials;
+use anyhow::anyhow;
 
 #[derive(clap::Parser)]
 pub(crate) struct SshArguments {
@@ -14,21 +16,22 @@ pub(crate) async fn ssh(gargs: &crate::args::GlobalArguments, args: &SshArgument
         None => args.destination.as_str(),
     };
 
-    let access_token = match crate::tasks::login::get_access_token(
-        gargs.get_api_url(),
-        &gargs.gallium_org,
-    )
-    .await
-    {
-        Ok(access_token) => access_token,
-        Err(_) => {
-            eprintln!(
-                "Ooops, you're not logged-in. Try `{:?} login`",
-                std::env::current_exe().unwrap()
-            );
-            return;
-        }
-    };
+    let access_token =
+        match get_login_response_for_saved_credentials(gargs.get_api_url(), &gargs.gallium_org)
+            .await
+            .and_then(|resp| {
+                resp.access_token
+                    .ok_or_else(|| anyhow!("API returned null accessToken"))
+            }) {
+            Ok(access_token) => access_token,
+            Err(_) => {
+                eprintln!(
+                    "Ooops, you're not logged-in. Try `{:?} login`",
+                    std::env::current_exe().unwrap()
+                );
+                return;
+            }
+        };
 
     let vm_service_api = gargs.build_api_client().unwrap().vm_service_api();
 
