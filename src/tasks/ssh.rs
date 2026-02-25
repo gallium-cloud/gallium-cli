@@ -1,5 +1,4 @@
 use crate::api::vm_service_api::entities::GetWsUrlForVmServiceQueryParams;
-use crate::api::vm_service_api::VmServiceApi;
 
 #[derive(clap::Parser)]
 pub(crate) struct SshArguments {
@@ -31,15 +30,17 @@ pub(crate) async fn ssh(gargs: &crate::args::GlobalArguments, args: &SshArgument
         }
     };
 
-    let ws_url = match VmServiceApi::get_ws_url_for_vm_service(
-        gargs.get_api_url(),
-        &access_token,
-        &GetWsUrlForVmServiceQueryParams {
-            host: host.to_string(),
-            port: "22".into(),
-        },
-    )
-    .await
+    let vm_service_api = gargs.build_api_client().unwrap().vm_service_api();
+
+    let ws_url = match vm_service_api
+        .get_ws_url_for_vm_service(
+            &access_token,
+            &GetWsUrlForVmServiceQueryParams {
+                host: host.to_string(),
+                port: "22".into(),
+            },
+        )
+        .await
     {
         Ok(ws_url) => ws_url,
         Err(e) => {

@@ -1,22 +1,25 @@
 use crate::api::vm_service_api::entities::{GetWsUrlForVmServiceQueryParams, VncUrlResponse};
+use crate::api::ApiClient;
 use anyhow::anyhow;
+use derive_more::Constructor;
+use std::sync::Arc;
 
 #[allow(unused)]
 pub mod entities;
 
-pub struct VmServiceApi;
+#[derive(Constructor)]
+pub struct VmServiceApi {
+    api_client: Arc<ApiClient>,
+}
 
 impl VmServiceApi {
     pub async fn get_ws_url_for_vm_service(
-        api_root_url: impl ToString,
+        &self,
         access_token: impl ToString,
         params: &GetWsUrlForVmServiceQueryParams,
     ) -> anyhow::Result<String> {
         let response = reqwest::Client::new()
-            .get(format!(
-                "{}/api/ws/ws_for_vm_service",
-                api_root_url.to_string()
-            ))
+            .get(self.api_client.api_url.join("/api/ws/ws_for_vm_service")?)
             .query(params)
             .header(
                 reqwest::header::AUTHORIZATION,

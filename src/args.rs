@@ -1,3 +1,6 @@
+use crate::api::ApiClient;
+use std::sync::Arc;
+
 #[derive(clap::Parser)]
 #[command(version, arg_required_else_help = true)]
 pub struct Invocation {
@@ -35,5 +38,9 @@ pub enum Action {
 impl GlobalArguments {
     pub fn get_api_url(&self) -> &str {
         self.api_url.strip_suffix("/").unwrap_or(&self.api_url)
+    }
+
+    pub fn build_api_client(&self) -> anyhow::Result<Arc<ApiClient>> {
+        Ok(ApiClient::new(self.get_api_url().try_into()?))
     }
 }
