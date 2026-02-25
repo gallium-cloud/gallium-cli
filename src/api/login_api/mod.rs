@@ -2,6 +2,7 @@
 pub mod entities;
 
 use crate::api::common_api::entities::GalliumApiErrorResponse;
+use crate::api::errors::ApiClientError;
 use crate::api::login_api::entities::{GalliumLoginRequest, GalliumLoginResponse};
 use anyhow::anyhow;
 use std::collections::HashMap;
@@ -31,7 +32,7 @@ pub async fn post_token(
 pub async fn post_login(
     api_root_url: &String,
     login_request: &GalliumLoginRequest,
-) -> anyhow::Result<Result<GalliumLoginResponse, GalliumApiErrorResponse>> {
+) -> Result<GalliumLoginResponse, ApiClientError> {
     let response = reqwest::Client::new()
         .post(format!("{}/login", api_root_url))
         .json(&login_request)
@@ -39,9 +40,11 @@ pub async fn post_login(
         .send()
         .await?;
 
-    if !response.status().is_success() {
-        Ok(Err(response.json::<GalliumApiErrorResponse>().await?))
+    if response.status().is_success() {
+        Ok(response.json::<GalliumLoginResponse>().await?)
     } else {
-        Ok(Ok(response.json::<GalliumLoginResponse>().await?))
+        Err(ApiClientError::ApiError {
+            error: response.json::<GalliumApiErrorResponse>().await?,
+        })
     }
 }

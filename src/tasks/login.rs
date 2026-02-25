@@ -1,4 +1,5 @@
 use crate::api;
+use crate::api::errors::ApiClientError;
 use crate::api::login_api::entities::GalliumLoginRequest;
 use crate::helpers::dotfile::{read_dotfile, write_dotfile};
 use std::collections::HashMap;
@@ -24,7 +25,7 @@ pub(crate) async fn login(args: &crate::args::GlobalArguments) {
 
     loop {
         match api::login_api::post_login(&args.api_root_url, &login_request).await {
-            Ok(Ok(resp)) => {
+            Ok(resp) => {
                 if resp.mfa_required {
                     login_request.otp = dialoguer::Input::new()
                         .with_prompt("one-time password from your authenticator")
@@ -36,8 +37,11 @@ pub(crate) async fn login(args: &crate::args::GlobalArguments) {
                     break;
                 }
             }
-            Ok(Err(e)) => {
-                eprintln!("Error logging in: {}", e.error.unwrap_or("(null)".into()));
+            Err(ApiClientError::ApiError { error }) => {
+                eprintln!(
+                    "Error logging in: {}",
+                    error.error.unwrap_or("(null)".into())
+                );
                 return;
             }
             Err(e) => {
