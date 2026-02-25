@@ -15,6 +15,6 @@ home = { version = "0.5.12" }
 reqwest = { version = "0.13.2", features = ["json", "query", "rustls"] }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = { version = "1.0.145" }
-tokio = { version = "1.48.0", features = ["rt", "rt-multi-thread", "macros", "io-std", "fs"] }
+tokio = { version = "1.48.0", features = ["rt", "macros", "io-std", "fs"] }
 tokio-tungstenite = { version = "0.28.0", features = ["rustls-tls-webpki-roots", "stream", "connect"], default-features = false }
 url = { version = "2.5.0" }

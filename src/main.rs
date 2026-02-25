@@ -7,7 +7,7 @@ pub mod helpers;
 mod tasks;
 mod tasks_internal;
 
-#[tokio::main]
+#[tokio::main(flavor = "current_thread")]
 async fn main() {
     let invocation = Invocation::parse();
 
