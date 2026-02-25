@@ -1,6 +1,5 @@
 use crate::args::{Action, Invocation};
 use crate::helpers::auth::get_login_response_for_saved_credentials;
-use anyhow::anyhow;
 use clap::Parser;
 
 mod api;
@@ -21,16 +20,23 @@ async fn main() {
         _ => (),
     };
 
-    let _access_token = match get_login_response_for_saved_credentials(
+    //TODO: on windows, double-clicking the EXE from the file browser will result in a console window that immediately closes
+    match get_login_response_for_saved_credentials(
         invocation.gargs.get_api_url(),
         &invocation.gargs.gallium_org,
     )
     .await
-    .and_then(|resp| {
-        resp.access_token
-            .ok_or_else(|| anyhow!("API returned null accessToken"))
-    }) {
-        Ok(access_token) => access_token,
+    {
+        Ok(login_resp) => {
+            if let Some(org) = login_resp.org {
+                println!("Logged in to Gallium org: {}", org.name);
+            }
+            if let Some(avail_orgs) = login_resp.available_orgs {
+                if !avail_orgs.is_empty() {
+                    println!("{} orgs available.", avail_orgs.len());
+                }
+            }
+        }
         Err(_) => {
             println!(
                 "Oops, you're not logged-in. Try `{:?} login`",
