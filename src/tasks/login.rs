@@ -1,6 +1,5 @@
 use crate::api::errors::ApiClientError;
 use crate::api::login_api::entities::GalliumLoginRequest;
-use crate::api::login_api::LoginApi;
 use crate::helpers::dotfile::{read_dotfile, write_dotfile};
 
 pub(crate) async fn login(args: &crate::args::GlobalArguments) {
@@ -20,10 +19,12 @@ pub(crate) async fn login(args: &crate::args::GlobalArguments) {
         refresh_token: None,
     };
 
+    let login_api = args.build_api_client().unwrap().login_api();
+
     let login_response;
 
     loop {
-        match LoginApi::login(args.get_api_url(), &login_request).await {
+        match login_api.login(&login_request).await {
             Ok(resp) => {
                 if resp.mfa_required {
                     login_request.otp = dialoguer::Input::new()

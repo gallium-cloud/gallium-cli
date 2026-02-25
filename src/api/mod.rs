@@ -1,3 +1,4 @@
+use crate::api::login_api::LoginApi;
 use crate::api::vm_service_api::VmServiceApi;
 use std::sync::Arc;
 use url::Url;
@@ -14,6 +15,10 @@ pub struct ApiClient {
 impl ApiClient {
     pub fn new(api_url: Url) -> Arc<Self> {
         Arc::new(Self { api_url })
+    }
+
+    pub fn login_api(self: &Arc<Self>) -> LoginApi {
+        LoginApi::new(self.clone())
     }
 
     pub fn vm_service_api(self: &Arc<Self>) -> VmServiceApi {

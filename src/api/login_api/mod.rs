@@ -6,16 +6,22 @@ use crate::api::errors::ApiClientError;
 use crate::api::login_api::entities::{
     GalliumLoginRequest, GalliumLoginResponse, GalliumTokenRequest,
 };
+use crate::api::ApiClient;
+use derive_more::Constructor;
+use std::sync::Arc;
 
-pub struct LoginApi;
+#[derive(Constructor)]
+pub struct LoginApi {
+    api_client: Arc<ApiClient>,
+}
 
 impl LoginApi {
     pub async fn refresh_access_token(
-        api_root_url: &str,
+        &self,
         token_request: &GalliumTokenRequest,
     ) -> Result<GalliumLoginResponse, ApiClientError> {
         let response = reqwest::Client::new()
-            .post(format!("{}/api/token", api_root_url))
+            .post(self.api_client.api_url.join("/api/token")?)
             .json(&token_request)
             .header("Gallium-CLI", clap::crate_version!())
             .send()
@@ -31,11 +37,11 @@ impl LoginApi {
     }
 
     pub async fn login(
-        api_root_url: &str,
+        &self,
         login_request: &GalliumLoginRequest,
     ) -> Result<GalliumLoginResponse, ApiClientError> {
         let response = reqwest::Client::new()
-            .post(format!("{}/api/login", api_root_url))
+            .post(self.api_client.api_url.join("/api/login")?)
             .json(&login_request)
             .header("Gallium-CLI", clap::crate_version!())
             .send()

@@ -1,5 +1,4 @@
 use crate::api::login_api::entities::{GalliumLoginResponse, GalliumTokenRequest};
-use crate::api::login_api::LoginApi;
 use crate::args::GlobalArguments;
 use crate::helpers::dotfile::read_dotfile;
 
@@ -13,12 +12,12 @@ pub(crate) async fn get_login_response_for_saved_credentials(
         .ok_or(anyhow::anyhow!("no refresh token available"))?
         .clone();
 
-    Ok(LoginApi::refresh_access_token(
-        global_args.get_api_url(),
-        &GalliumTokenRequest {
+    let login_api = global_args.build_api_client()?.login_api();
+
+    Ok(login_api
+        .refresh_access_token(&GalliumTokenRequest {
             refresh_token,
             org_slug: global_args.gallium_org.clone(),
-        },
-    )
-    .await?)
+        })
+        .await?)
 }
