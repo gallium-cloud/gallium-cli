@@ -88,3 +88,17 @@ pub struct GalliumTokenRequest {
     #[serde(rename = "refreshToken")]
     pub refresh_token: String,
 }
+
+// =============================================================================
+// POST /api/token/invalidate invalidateRefreshToken
+// Mark a refresh token as invalid
+// Content-Type: application/json
+// =============================================================================
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InvalidateTokenRequest {
+    /// Whether to invalidate all tokens for this user. If true, all tokens will be invalidated. Otherwise, only the token supplied in refreshToken will be invalidated.
+    #[serde(rename = "invalidateAll")]
+    pub invalidate_all: bool,
+    #[serde(rename = "refreshToken")]
+    pub refresh_token: String,
+}
