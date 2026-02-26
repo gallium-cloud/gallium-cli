@@ -1,0 +1,27 @@
+{
+  "children": [
+    {
+      "name": "file",
+      "info": {
+        "children": [
+        ],
+        "virtual-size": 4449278976,
+        "filename": "dummy.vhd",
+        "format": "file",
+        "actual-size": 2173244416,
+        "format-specific": {
+          "type": "file",
+          "data": {
+          }
+        },
+        "dirty-flag": false
+      }
+    }
+  ],
+  "virtual-size": 68718428160,
+  "filename": "dummy.vhd",
+  "cluster-size": 2097152,
+  "format": "vpc",
+  "actual-size": 2173244416,
+  "dirty-flag": false
+}

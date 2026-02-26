@@ -1,0 +1,38 @@
+{
+  "children": [
+    {
+      "name": "file",
+      "info": {
+        "children": [
+        ],
+        "virtual-size": 513146880,
+        "filename": "AlmaLinux-10-GenericCloud-10.1-20251125.0.x86_64_v2.qcow2",
+        "format": "file",
+        "actual-size": 510034944,
+        "format-specific": {
+          "type": "file",
+          "data": {
+          }
+        },
+        "dirty-flag": false
+      }
+    }
+  ],
+  "virtual-size": 10737418240,
+  "filename": "AlmaLinux-10-GenericCloud-10.1-20251125.0.x86_64_v2.qcow2",
+  "cluster-size": 65536,
+  "format": "qcow2",
+  "actual-size": 510034944,
+  "format-specific": {
+    "type": "qcow2",
+    "data": {
+      "compat": "1.1",
+      "compression-type": "zlib",
+      "lazy-refcounts": false,
+      "refcount-bits": 16,
+      "corrupt": false,
+      "extended-l2": false
+    }
+  },
+  "dirty-flag": false
+}

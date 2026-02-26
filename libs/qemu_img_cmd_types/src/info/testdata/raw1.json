@@ -1,0 +1,26 @@
+{
+  "children": [
+    {
+      "name": "file",
+      "info": {
+        "children": [
+        ],
+        "virtual-size": 400556544,
+        "filename": "aws_alpine-3.23.3-x86_64-uefi-cloudinit-metal-r0.vhd",
+        "format": "file",
+        "actual-size": 306160640,
+        "format-specific": {
+          "type": "file",
+          "data": {
+          }
+        },
+        "dirty-flag": false
+      }
+    }
+  ],
+  "virtual-size": 400556544,
+  "filename": "aws_alpine-3.23.3-x86_64-uefi-cloudinit-metal-r0.vhd",
+  "format": "raw",
+  "actual-size": 306160640,
+  "dirty-flag": false
+}

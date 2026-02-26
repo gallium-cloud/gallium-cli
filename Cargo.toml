@@ -1,3 +1,9 @@
+[workspace]
+
+members = [
+    "libs/qemu_img_cmd_types"
+]
+
 [package]
 name = "gallium-cli"
 version = "0.1.1"
