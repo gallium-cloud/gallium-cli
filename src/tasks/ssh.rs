@@ -22,23 +22,20 @@ pub(crate) async fn ssh(
         None => args.destination.as_str(),
     };
 
-    let access_token = get_login_response_for_saved_credentials(gargs)
-        .await?
-        .access_token
-        .ok_or_else(|| TaskError::ApiResponseMissingField {
-            field: "accessToken",
-        })?;
-
-    let vm_service_api = gargs.build_api_client()?.vm_service_api();
+    let vm_service_api = gargs
+        .build_api_client()?
+        .with_access_token(
+            get_login_response_for_saved_credentials(gargs)
+                .await?
+                .try_into()?,
+        )
+        .vm_service_api();
 
     let ws_url = vm_service_api
-        .get_ws_url_for_vm_service(
-            &access_token,
-            &GetWsUrlForVmServiceQueryParams {
-                host: host.to_string(),
-                port: "22".into(),
-            },
-        )
+        .get_ws_url_for_vm_service(&GetWsUrlForVmServiceQueryParams {
+            host: host.to_string(),
+            port: "22".into(),
+        })
         .await?
         .url
         .ok_or_else(|| TaskError::ApiResponseMissingField { field: "ws:URL" })?;

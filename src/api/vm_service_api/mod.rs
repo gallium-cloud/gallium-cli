@@ -16,7 +16,6 @@ pub struct VmServiceApi {
 impl VmServiceApi {
     pub async fn get_ws_url_for_vm_service(
         &self,
-        access_token: impl ToString,
         params: &GetWsUrlForVmServiceQueryParams,
     ) -> Result<VncUrlResponse, ApiClientError> {
         let response = reqwest::Client::new()
@@ -25,10 +24,7 @@ impl VmServiceApi {
                     .build_url(&["api", "ws", "ws_for_vm_service"])?,
             )
             .query(params)
-            .header(
-                reqwest::header::AUTHORIZATION,
-                format!("Bearer {}", access_token.to_string()),
-            )
+            .bearer_auth(self.api_client.get_access_token()?.0.as_str())
             .header("Gallium-CLI", clap::crate_version!())
             .send()
             .await?;
