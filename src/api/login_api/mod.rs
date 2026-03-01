@@ -1,8 +1,6 @@
 #[allow(unused)]
 pub mod entities;
-
 use crate::api::ApiClient;
-use crate::api::common_api::entities::GalliumApiErrorResponse;
 use crate::api::errors::ApiClientError;
 use crate::api::login_api::entities::{
     GalliumApiSuccessResponse, GalliumLoginRequest, GalliumLoginResponse, GalliumTokenRequest,
@@ -29,14 +27,7 @@ impl LoginApi {
             .header("Gallium-CLI", clap::crate_version!())
             .send()
             .await?;
-
-        if response.status().is_success() {
-            Ok(response.json::<GalliumLoginResponse>().await?)
-        } else {
-            Err(ApiClientError::Api {
-                error: response.json::<GalliumApiErrorResponse>().await?,
-            })
-        }
+        self.api_client.deser_response(response).await
     }
 
     pub async fn login(
@@ -49,14 +40,7 @@ impl LoginApi {
             .json(&login_request)
             .send()
             .await?;
-
-        if response.status().is_success() {
-            Ok(response.json::<GalliumLoginResponse>().await?)
-        } else {
-            Err(ApiClientError::Api {
-                error: response.json::<GalliumApiErrorResponse>().await?,
-            })
-        }
+        self.api_client.deser_response(response).await
     }
 
     pub async fn invalidate_refresh_token(
@@ -69,13 +53,6 @@ impl LoginApi {
             .json(invalidate_request)
             .send()
             .await?;
-
-        if response.status().is_success() {
-            Ok(response.json::<GalliumApiSuccessResponse>().await?)
-        } else {
-            Err(ApiClientError::Api {
-                error: response.json::<GalliumApiErrorResponse>().await?,
-            })
-        }
+        self.api_client.deser_response(response).await
     }
 }

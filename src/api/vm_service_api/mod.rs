@@ -1,5 +1,4 @@
 use crate::api::ApiClient;
-use crate::api::common_api::entities::GalliumApiErrorResponse;
 use crate::api::errors::ApiClientError;
 use crate::api::vm_service_api::entities::{GetWsUrlForVmServiceQueryParams, VncUrlResponse};
 use derive_more::Constructor;
@@ -26,20 +25,6 @@ impl VmServiceApi {
             .send()
             .await?;
 
-        if let Some(msg) = response
-            .headers()
-            .get("X-Gallium-Cli-Msg")
-            .and_then(|h| h.to_str().ok())
-        {
-            eprintln!("{msg}");
-        }
-
-        if response.status().is_success() {
-            Ok(response.json::<VncUrlResponse>().await?)
-        } else {
-            Err(ApiClientError::Api {
-                error: response.json::<GalliumApiErrorResponse>().await?,
-            })
-        }
+        self.api_client.deser_response(response).await
     }
 }

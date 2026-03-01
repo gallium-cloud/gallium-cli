@@ -1,8 +1,10 @@
+use crate::api::common_api::entities::GalliumApiErrorResponse;
 use crate::api::errors::ApiClientError;
 use crate::api::login_api::LoginApi;
 use crate::api::vm_service_api::VmServiceApi;
 use crate::helpers::auth::AccessToken;
 use reqwest::header;
+use serde::de::DeserializeOwned;
 use std::sync::Arc;
 use url::Url;
 
@@ -84,6 +86,27 @@ impl ApiClient {
         Ok(self
             .request(method, segments_in)?
             .bearer_auth(self.get_access_token()?.0.as_str()))
+    }
+
+    async fn deser_response<T: DeserializeOwned>(
+        &self,
+        response: reqwest::Response,
+    ) -> Result<T, ApiClientError> {
+        if let Some(msg) = response
+            .headers()
+            .get("X-Gallium-Cli-Msg")
+            .and_then(|h| h.to_str().ok())
+        {
+            eprintln!("{msg}");
+        }
+
+        if response.status().is_success() {
+            Ok(response.json::<T>().await?)
+        } else {
+            Err(ApiClientError::Api {
+                error: response.json::<GalliumApiErrorResponse>().await?,
+            })
+        }
     }
 
     pub fn login_api(self: &Arc<Self>) -> LoginApi {
