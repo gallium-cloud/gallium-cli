@@ -20,7 +20,10 @@ impl VmServiceApi {
         params: &GetWsUrlForVmServiceQueryParams,
     ) -> Result<VncUrlResponse, ApiClientError> {
         let response = reqwest::Client::new()
-            .get(self.api_client.api_url.join("/api/ws/ws_for_vm_service")?)
+            .get(
+                self.api_client
+                    .build_url(&["api", "ws", "ws_for_vm_service"])?,
+            )
             .query(params)
             .header(
                 reqwest::header::AUTHORIZATION,

@@ -9,4 +9,8 @@ pub enum ApiClientError {
     Request { source: reqwest::Error },
     #[snafu(transparent)]
     UrlParseError { source: url::ParseError },
+    #[snafu(display("Invalid base URL"))]
+    InvalidBaseUrl,
+    #[snafu(display("Invalid path segment: {val}"))]
+    InvalidPathSegmentParameter { val: String },
 }

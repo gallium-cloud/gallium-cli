@@ -22,7 +22,7 @@ impl LoginApi {
         token_request: &GalliumTokenRequest,
     ) -> Result<GalliumLoginResponse, ApiClientError> {
         let response = reqwest::Client::new()
-            .post(self.api_client.api_url.join("/api/token")?)
+            .post(self.api_client.build_url(&["api", "token"])?)
             .json(&token_request)
             .header("Gallium-CLI", clap::crate_version!())
             .send()
@@ -42,7 +42,7 @@ impl LoginApi {
         login_request: &GalliumLoginRequest,
     ) -> Result<GalliumLoginResponse, ApiClientError> {
         let response = reqwest::Client::new()
-            .post(self.api_client.api_url.join("/api/login")?)
+            .post(self.api_client.build_url(&["api", "login"])?)
             .json(&login_request)
             .header("Gallium-CLI", clap::crate_version!())
             .send()
@@ -62,7 +62,7 @@ impl LoginApi {
         invalidate_request: &InvalidateTokenRequest,
     ) -> Result<GalliumApiSuccessResponse, ApiClientError> {
         let response = reqwest::Client::new()
-            .post(self.api_client.api_url.join("/api/token/invalidate")?)
+            .post(self.api_client.build_url(&["api", "token", "invalidate"])?)
             .json(invalidate_request)
             .header("Gallium-CLI", clap::crate_version!())
             .send()
