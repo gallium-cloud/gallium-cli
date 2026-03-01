@@ -2,6 +2,7 @@ use crate::api::errors::ApiClientError;
 use crate::api::login_api::LoginApi;
 use crate::api::vm_service_api::VmServiceApi;
 use crate::helpers::auth::AccessToken;
+use reqwest::header;
 use std::sync::Arc;
 use url::Url;
 
@@ -69,7 +70,11 @@ impl ApiClient {
         Ok(self
             .client
             .request(method, self.build_url(segments_in)?)
-            .header("Gallium-CLI", clap::crate_version!()))
+            .header("Gallium-CLI", clap::crate_version!())
+            .header(
+                header::USER_AGENT,
+                "Gallium Cloud CLI (https://gallium.cloud)",
+            ))
     }
     fn request_authed(
         &self,
