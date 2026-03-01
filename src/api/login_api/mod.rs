@@ -9,6 +9,7 @@ use crate::api::login_api::entities::{
     InvalidateTokenRequest,
 };
 use derive_more::Constructor;
+use reqwest::Method;
 use std::sync::Arc;
 
 #[derive(Constructor)]
@@ -21,8 +22,9 @@ impl LoginApi {
         &self,
         token_request: &GalliumTokenRequest,
     ) -> Result<GalliumLoginResponse, ApiClientError> {
-        let response = reqwest::Client::new()
-            .post(self.api_client.build_url(&["api", "token"])?)
+        let response = self
+            .api_client
+            .request(Method::POST, &["api", "token"])?
             .json(&token_request)
             .header("Gallium-CLI", clap::crate_version!())
             .send()
@@ -41,10 +43,10 @@ impl LoginApi {
         &self,
         login_request: &GalliumLoginRequest,
     ) -> Result<GalliumLoginResponse, ApiClientError> {
-        let response = reqwest::Client::new()
-            .post(self.api_client.build_url(&["api", "login"])?)
+        let response = self
+            .api_client
+            .request(Method::POST, &["api", "login"])?
             .json(&login_request)
-            .header("Gallium-CLI", clap::crate_version!())
             .send()
             .await?;
 
@@ -61,10 +63,10 @@ impl LoginApi {
         &self,
         invalidate_request: &InvalidateTokenRequest,
     ) -> Result<GalliumApiSuccessResponse, ApiClientError> {
-        let response = reqwest::Client::new()
-            .post(self.api_client.build_url(&["api", "token", "invalidate"])?)
+        let response = self
+            .api_client
+            .request(Method::POST, &["api", "token", "invalidate"])?
             .json(invalidate_request)
-            .header("Gallium-CLI", clap::crate_version!())
             .send()
             .await?;
 

@@ -13,6 +13,7 @@ pub mod vm_service_api;
 pub struct ApiClient {
     pub api_url: Url,
     pub access_token: Option<AccessToken>,
+    pub client: reqwest::Client,
 }
 
 impl ApiClient {
@@ -20,6 +21,7 @@ impl ApiClient {
         Arc::new(Self {
             api_url,
             access_token: None,
+            client: reqwest::Client::new(),
         })
     }
 
@@ -27,10 +29,11 @@ impl ApiClient {
         Arc::new(Self {
             api_url: self.api_url.clone(),
             access_token: Some(access_token),
+            client: self.client.clone(),
         })
     }
 
-    pub fn get_access_token(&self) -> Result<&AccessToken, ApiClientError> {
+    fn get_access_token(&self) -> Result<&AccessToken, ApiClientError> {
         self.access_token
             .as_ref()
             .ok_or_else(|| ApiClientError::InternalError {
@@ -56,6 +59,26 @@ impl ApiClient {
         drop(segments_out);
 
         Ok(url)
+    }
+
+    fn request(
+        &self,
+        method: reqwest::Method,
+        segments_in: &[&str],
+    ) -> Result<reqwest::RequestBuilder, ApiClientError> {
+        Ok(self
+            .client
+            .request(method, self.build_url(segments_in)?)
+            .header("Gallium-CLI", clap::crate_version!()))
+    }
+    fn request_authed(
+        &self,
+        method: reqwest::Method,
+        segments_in: &[&str],
+    ) -> Result<reqwest::RequestBuilder, ApiClientError> {
+        Ok(self
+            .request(method, segments_in)?
+            .bearer_auth(self.get_access_token()?.0.as_str()))
     }
 
     pub fn login_api(self: &Arc<Self>) -> LoginApi {

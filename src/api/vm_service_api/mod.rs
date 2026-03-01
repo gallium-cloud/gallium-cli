@@ -3,6 +3,7 @@ use crate::api::common_api::entities::GalliumApiErrorResponse;
 use crate::api::errors::ApiClientError;
 use crate::api::vm_service_api::entities::{GetWsUrlForVmServiceQueryParams, VncUrlResponse};
 use derive_more::Constructor;
+use reqwest::Method;
 use std::sync::Arc;
 
 #[allow(unused)]
@@ -18,14 +19,10 @@ impl VmServiceApi {
         &self,
         params: &GetWsUrlForVmServiceQueryParams,
     ) -> Result<VncUrlResponse, ApiClientError> {
-        let response = reqwest::Client::new()
-            .get(
-                self.api_client
-                    .build_url(&["api", "ws", "ws_for_vm_service"])?,
-            )
+        let response = self
+            .api_client
+            .request_authed(Method::GET, &["api", "ws", "ws_for_vm_service"])?
             .query(params)
-            .bearer_auth(self.api_client.get_access_token()?.0.as_str())
-            .header("Gallium-CLI", clap::crate_version!())
             .send()
             .await?;
 
