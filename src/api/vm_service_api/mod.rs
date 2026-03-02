@@ -1,7 +1,7 @@
+use crate::api::ApiClient;
 use crate::api::common_api::entities::GalliumApiErrorResponse;
 use crate::api::errors::ApiClientError;
 use crate::api::vm_service_api::entities::{GetWsUrlForVmServiceQueryParams, VncUrlResponse};
-use crate::api::ApiClient;
 use derive_more::Constructor;
 use std::sync::Arc;
 

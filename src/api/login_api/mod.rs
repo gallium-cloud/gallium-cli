@@ -1,13 +1,13 @@
 #[allow(unused)]
 pub mod entities;
 
+use crate::api::ApiClient;
 use crate::api::common_api::entities::GalliumApiErrorResponse;
 use crate::api::errors::ApiClientError;
 use crate::api::login_api::entities::{
     GalliumApiSuccessResponse, GalliumLoginRequest, GalliumLoginResponse, GalliumTokenRequest,
     InvalidateTokenRequest,
 };
-use crate::api::ApiClient;
 use derive_more::Constructor;
 use std::sync::Arc;
 
