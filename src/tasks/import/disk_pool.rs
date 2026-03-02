@@ -1,9 +1,7 @@
 use crate::api::storage_api::StorageApi;
 use crate::api::storage_api::entities::{DiskPoolSummary, ListDiskPoolsPathParams};
-use crate::helpers::auth::AccessToken;
 use crate::task_common::error::TaskError;
 use crate::tasks::import::ImportArguments;
-use serde::Deserialize;
 
 #[derive(Debug, Clone)]
 pub struct DiskPoolDetermination {
