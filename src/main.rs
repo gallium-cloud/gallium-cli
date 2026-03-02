@@ -28,10 +28,10 @@ async fn main() -> Result<(), TaskError> {
                     if let Some(org) = login_resp.org {
                         println!("Logged in to Gallium org: {}", org.name);
                     }
-                    if let Some(avail_orgs) = login_resp.available_orgs {
-                        if !avail_orgs.is_empty() {
-                            println!("{} orgs available.", avail_orgs.len());
-                        }
+                    if let Some(avail_orgs) = login_resp.available_orgs
+                        && !avail_orgs.is_empty()
+                    {
+                        println!("{} orgs available.", avail_orgs.len());
                     }
                 }
                 Err(_) => {

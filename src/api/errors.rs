@@ -9,4 +9,9 @@ pub enum ApiClientError {
     Request { source: reqwest::Error },
     #[snafu(transparent)]
     UrlParseError { source: url::ParseError },
+    // Indicates a bug in the CLI tool.
+    #[snafu(display("API Client Internal Error: {reason}"))]
+    InternalError { reason: &'static str },
+    #[snafu(display("Invalid path segment: {val}"))]
+    InvalidPathSegmentParameter { val: String },
 }

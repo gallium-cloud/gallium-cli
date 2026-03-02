@@ -1,14 +1,13 @@
 #[allow(unused)]
 pub mod entities;
-
-use crate::api::common_api::entities::GalliumApiErrorResponse;
+use crate::api::ApiClient;
 use crate::api::errors::ApiClientError;
 use crate::api::login_api::entities::{
     GalliumApiSuccessResponse, GalliumLoginRequest, GalliumLoginResponse, GalliumTokenRequest,
     InvalidateTokenRequest,
 };
-use crate::api::ApiClient;
 use derive_more::Constructor;
+use reqwest::Method;
 use std::sync::Arc;
 
 #[derive(Constructor)]
@@ -21,59 +20,39 @@ impl LoginApi {
         &self,
         token_request: &GalliumTokenRequest,
     ) -> Result<GalliumLoginResponse, ApiClientError> {
-        let response = reqwest::Client::new()
-            .post(self.api_client.api_url.join("/api/token")?)
+        let response = self
+            .api_client
+            .request(Method::POST, &["api", "token"])?
             .json(&token_request)
             .header("Gallium-CLI", clap::crate_version!())
             .send()
             .await?;
-
-        if response.status().is_success() {
-            Ok(response.json::<GalliumLoginResponse>().await?)
-        } else {
-            Err(ApiClientError::Api {
-                error: response.json::<GalliumApiErrorResponse>().await?,
-            })
-        }
+        self.api_client.deser_response(response).await
     }
 
     pub async fn login(
         &self,
         login_request: &GalliumLoginRequest,
     ) -> Result<GalliumLoginResponse, ApiClientError> {
-        let response = reqwest::Client::new()
-            .post(self.api_client.api_url.join("/api/login")?)
+        let response = self
+            .api_client
+            .request(Method::POST, &["api", "login"])?
             .json(&login_request)
-            .header("Gallium-CLI", clap::crate_version!())
             .send()
             .await?;
-
-        if response.status().is_success() {
-            Ok(response.json::<GalliumLoginResponse>().await?)
-        } else {
-            Err(ApiClientError::Api {
-                error: response.json::<GalliumApiErrorResponse>().await?,
-            })
-        }
+        self.api_client.deser_response(response).await
     }
 
     pub async fn invalidate_refresh_token(
         &self,
         invalidate_request: &InvalidateTokenRequest,
     ) -> Result<GalliumApiSuccessResponse, ApiClientError> {
-        let response = reqwest::Client::new()
-            .post(self.api_client.api_url.join("/api/token/invalidate")?)
+        let response = self
+            .api_client
+            .request(Method::POST, &["api", "token", "invalidate"])?
             .json(invalidate_request)
-            .header("Gallium-CLI", clap::crate_version!())
             .send()
             .await?;
-
-        if response.status().is_success() {
-            Ok(response.json::<GalliumApiSuccessResponse>().await?)
-        } else {
-            Err(ApiClientError::Api {
-                error: response.json::<GalliumApiErrorResponse>().await?,
-            })
-        }
+        self.api_client.deser_response(response).await
     }
 }
