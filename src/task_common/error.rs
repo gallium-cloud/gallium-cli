@@ -25,6 +25,13 @@ pub enum TaskError {
     ApiClientError { source: ApiClientError },
     #[snafu(display("API Response missing expected field: {field}"))]
     ApiResponseMissingField { field: &'static str },
+    #[snafu(display("Command {slug} failed: {cmd_type}"))]
+    CommandFailure { slug: String, cmd_type: String },
+    #[snafu(display("Command response for {cmd_type} missing or invalid"))]
+    CommandResponseMissingOrInvalid {
+        cmd_type: String,
+        serde_err: Option<serde_json::Error>,
+    },
     #[snafu(transparent)]
     HelperCommand { source: HelperCommandError },
     #[snafu(display("Failed to initialize {name}"))]
