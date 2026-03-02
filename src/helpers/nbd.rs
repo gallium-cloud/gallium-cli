@@ -1,6 +1,6 @@
 use crate::api::command_v2_api::CommandApi;
 use crate::api::storage_api::entities::CmdSubmitResponse;
-use crate::helpers::cmd_response::{poll_for_cmd_response, poll_for_cmd_response_type};
+use crate::helpers::cmd::cmd_response::{poll_for_cmd_response, poll_for_cmd_response_type};
 use crate::task_common::error::TaskError;
 use serde::Deserialize;
 
