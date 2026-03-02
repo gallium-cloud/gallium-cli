@@ -1,6 +1,7 @@
 use crate::api::ApiClient;
 use crate::api::command_v2_api::entities::{
-    CommandApiV2DetailsResponse, GetCommandDetailsPathParams,
+    CommandApiV2DetailsResponse, CommandApiV2ProgressPutRequest, CommandApiV2ProgressResponse,
+    GetCommandDetailsPathParams, UpdateCommandProgressPathParams,
 };
 use crate::api::errors::ApiClientError;
 use derive_more::Constructor;
@@ -26,6 +27,24 @@ impl CommandApi {
                 Method::GET,
                 &["api", "v2", "command", &path_params.id, "details"],
             )?
+            .send()
+            .await?;
+
+        self.api_client.deser_response(response).await
+    }
+
+    pub async fn update_command_progress(
+        &self,
+        path_params: &UpdateCommandProgressPathParams,
+        request_body: &CommandApiV2ProgressPutRequest,
+    ) -> Result<CommandApiV2ProgressResponse, ApiClientError> {
+        let response = self
+            .api_client
+            .request_authed(
+                Method::PUT,
+                &["api", "v2", "command", &path_params.id, "progress"],
+            )?
+            .json(request_body)
             .send()
             .await?;
 

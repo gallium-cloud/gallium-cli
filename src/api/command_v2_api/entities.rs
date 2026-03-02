@@ -29,9 +29,39 @@ pub struct CommandApiV2DetailsResponse {
     pub status: ApiCmdStatus,
 }
 
+// =============================================================================
+// PUT /api/v2/command/{id}/progress UpdateCommandProgress
+// Update the backend with information about the progress of an externally managed command
+// Content-Type: application/json
+// Security: bearerAuth
+// =============================================================================
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CommandApiV2ProgressPutRequest {
+    #[serde(rename = "progressCurrent")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub progress_current: Option<f64>,
+    #[serde(rename = "progressMessage")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub progress_message: Option<String>,
+    #[serde(rename = "progressTotal")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub progress_total: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub status: Option<ApiCmdStatus>,
+}
+
+/// Response for UpdateCommandProgress PUT /api/v2/command/{id}/progress
+pub type CommandApiV2ProgressResponse = serde_json::Value;
+
 /// Path parameters for GetCommandDetails GET /api/v2/command/{id}/details
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GetCommandDetailsPathParams {
+    pub id: GalliumSlug,
+}
+
+/// Path parameters for UpdateCommandProgress PUT /api/v2/command/{id}/progress
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UpdateCommandProgressPathParams {
     pub id: GalliumSlug,
 }
 
