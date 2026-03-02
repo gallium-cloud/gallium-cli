@@ -465,6 +465,7 @@ dependencies = [
  "duct",
  "futures-util",
  "home",
+ "qemu_img_cmd_types",
  "reqwest",
  "serde",
  "serde_json",
