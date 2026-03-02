@@ -1,0 +1,27 @@
+{
+  "children": [
+    {
+      "name": "file",
+      "info": {
+        "children": [
+        ],
+        "virtual-size": 75497472,
+        "filename": "chr-7.20.8.vhdx",
+        "format": "file",
+        "actual-size": 45241344,
+        "format-specific": {
+          "type": "file",
+          "data": {
+          }
+        },
+        "dirty-flag": false
+      }
+    }
+  ],
+  "virtual-size": 134217728,
+  "filename": "chr-7.20.8.vhdx",
+  "cluster-size": 8388608,
+  "format": "vhdx",
+  "actual-size": 45241344,
+  "dirty-flag": false
+}

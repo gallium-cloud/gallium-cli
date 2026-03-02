@@ -1,0 +1,43 @@
+{
+  "children": [
+    {
+      "name": "file",
+      "info": {
+        "children": [
+        ],
+        "virtual-size": 45023232,
+        "filename": "chr-7.20.8.vmdk",
+        "format": "file",
+        "actual-size": 45433856,
+        "format-specific": {
+          "type": "file",
+          "data": {
+          }
+        },
+        "dirty-flag": false
+      }
+    }
+  ],
+  "virtual-size": 134217728,
+  "filename": "chr-7.20.8.vmdk",
+  "cluster-size": 65536,
+  "format": "vmdk",
+  "actual-size": 45433856,
+  "format-specific": {
+    "type": "vmdk",
+    "data": {
+      "cid": 3644264064,
+      "parent-cid": 4294967295,
+      "create-type": "monolithicSparse",
+      "extents": [
+        {
+          "virtual-size": 134217728,
+          "filename": "chr-7.20.8.vmdk",
+          "cluster-size": 65536,
+          "format": ""
+        }
+      ]
+    }
+  },
+  "dirty-flag": false
+}
