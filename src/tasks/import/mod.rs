@@ -4,8 +4,10 @@ use crate::task_common::error::TaskError;
 use crate::tasks::import::source_scan::{ImportSource, scan_import_sources};
 
 use crate::api::ApiClient;
+use crate::api::command_v2_api::entities::ApiCmdStatus;
 use crate::api::storage_api::entities::{ImportNbdVolumePathParams, VolumeNbdImportRequest};
 use crate::helpers::auth::get_login_response_for_saved_credentials;
+use crate::helpers::cmd::cmd_progress::CommandProgressUpdater;
 use crate::helpers::mtls::MtlsCredentialHelper;
 use crate::helpers::nbd::poll_for_nbd_response;
 use crate::helpers::qemu::QemuImgConvert;
@@ -100,9 +102,18 @@ async fn process(
         source_format: source.reported_format,
     };
 
-    convert_cmd.run().await?;
+    let progress_updater =
+        CommandProgressUpdater::build(cmd_api, &submit_resp, "AWAIT_NBD_COMPLETION")?;
 
-    eprintln!("Import completed successfully");
-
-    Ok(())
+    match convert_cmd.run().await {
+        Ok(_) => {
+            eprintln!("Import completed successfully");
+            progress_updater.complete(ApiCmdStatus::COMPLETE).await?;
+            Ok(())
+        }
+        Err(e) => {
+            progress_updater.complete(ApiCmdStatus::FAILED).await.ok();
+            Err(e.into())
+        }
+    }
 }
