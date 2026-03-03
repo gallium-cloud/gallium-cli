@@ -543,7 +543,7 @@ dependencies = [
 
 [[package]]
 name = "gallium-cli"
-version = "0.2.0-pre4"
+version = "0.2.0-pre5"
 dependencies = [
  "base64",
  "clap",
