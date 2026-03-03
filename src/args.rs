@@ -37,6 +37,9 @@ pub enum Action {
 
     /// SSH to an instance on a Gallium server
     Ssh(crate::tasks::ssh::SshArguments),
+
+    /// Print version information
+    Version,
 }
 
 impl GlobalArguments {

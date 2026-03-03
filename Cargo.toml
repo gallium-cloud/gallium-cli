@@ -37,6 +37,9 @@ x509-parser = "0.18.1"
 cliclack = "0.3.9"
 
 
+[build-dependencies]
+time = "0.3.47"
+
 [lints.clippy]
 
 # Enable desired off-by-default lints
