@@ -12,7 +12,9 @@ use crate::helpers::mtls::MtlsCredentialHelper;
 use crate::helpers::nbd::poll_for_nbd_response;
 use crate::helpers::qemu::QemuImgConvert;
 use crate::tasks::import::disk_pool::{DiskPoolDetermination, determine_disk_pool};
-use cliclack::{multi_progress, progress_bar, spinner};
+use cliclack::{confirm, log, multi_progress, progress_bar, spinner};
+use humansize::{BINARY, format_size};
+use snafu::ResultExt;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -53,11 +55,62 @@ pub(crate) async fn import_main(
         import_sources.extend(scan_import_sources(source).await?);
     }
 
-    for source in import_sources {
-        process(api_client.clone(), &args, &disk_pool, source).await?;
+    if confirm_import(&import_sources, &disk_pool, &args)? {
+        for source in import_sources {
+            process(api_client.clone(), &args, &disk_pool, source).await?;
+        }
     }
 
     Ok(())
+}
+
+fn confirm_import(
+    sources: &[ImportSource],
+    disk_pool: &DiskPoolDetermination,
+    args: &ImportArguments,
+) -> Result<bool, TaskError> {
+    if sources.is_empty() {
+        log::warning("Nothing to import.")
+            .whatever_context::<_, TaskError>("writing to terminal")?;
+        return Ok(false);
+    }
+
+    let summary = sources
+        .iter()
+        .map(|s| {
+            format!(
+                "  {} (format: {}, volume size: {})",
+                s.name_part,
+                s.reported_format,
+                format_size(s.virtual_size_bytes, BINARY),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    log::info(format!(
+        "The following {} will be imported to disk pool \"{}\":\n{}",
+        if sources.len() == 1 { "file" } else { "files" },
+        disk_pool
+            .display_name
+            .as_deref()
+            .unwrap_or(&disk_pool.kube_name),
+        summary,
+    ))
+    .whatever_context::<_, TaskError>("writing to terminal")?;
+
+    if !args.yes {
+        let proceed = confirm("Proceed with import?")
+            .initial_value(true)
+            .interact()
+            .whatever_context::<_, TaskError>("reading confirmation")?;
+        if !proceed {
+            log::warning("Import cancelled.")
+                .whatever_context::<_, TaskError>("writing to terminal")?;
+            return Ok(false);
+        }
+    }
+
+    Ok(true)
 }
 
 async fn process(
