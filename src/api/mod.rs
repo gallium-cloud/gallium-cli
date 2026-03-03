@@ -1,6 +1,9 @@
 use crate::api::common_api::entities::GalliumApiErrorResponse;
 use crate::api::errors::ApiClientError;
+
+use crate::api::command_v2_api::CommandApi;
 use crate::api::login_api::LoginApi;
+use crate::api::storage_api::StorageApi;
 use crate::api::vm_service_api::VmServiceApi;
 use crate::helpers::auth::AccessToken;
 use reqwest::header;
@@ -8,9 +11,11 @@ use serde::de::DeserializeOwned;
 use std::sync::Arc;
 use url::Url;
 
+pub mod command_v2_api;
 mod common_api;
 pub mod errors;
 pub(crate) mod login_api;
+pub mod storage_api;
 pub mod vm_service_api;
 
 pub struct ApiClient {
@@ -115,5 +120,13 @@ impl ApiClient {
 
     pub fn vm_service_api(self: &Arc<Self>) -> VmServiceApi {
         VmServiceApi::new(self.clone())
+    }
+
+    pub fn storage_api(self: &Arc<Self>) -> StorageApi {
+        StorageApi::new(self.clone())
+    }
+
+    pub fn command_api(self: &Arc<Self>) -> CommandApi {
+        CommandApi::new(self.clone())
     }
 }

@@ -27,6 +27,9 @@ pub enum Action {
     #[clap(hide = true)]
     Proxy(crate::tasks_internal::proxy::ProxyArguments),
 
+    /// Import virtual disks into a Gallium deployment
+    Import(crate::tasks::import::ImportArguments),
+
     /// Login to your Gallium account
     Login,
     /// Clear saved login token
