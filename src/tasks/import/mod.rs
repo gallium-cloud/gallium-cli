@@ -12,6 +12,7 @@ use crate::helpers::mtls::MtlsCredentialHelper;
 use crate::helpers::nbd::poll_for_nbd_response;
 use crate::helpers::qemu::QemuImgConvert;
 use crate::tasks::import::disk_pool::{DiskPoolDetermination, determine_disk_pool};
+use cliclack::{multi_progress, progress_bar, spinner};
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -67,6 +68,13 @@ async fn process(
 ) -> Result<(), TaskError> {
     let storage_api = api_client.storage_api();
 
+    let multi = multi_progress(format!("Importing {}", source.name_part));
+    let spinner_init = multi.add(spinner());
+    let pb = multi.add(progress_bar(10000));
+    let spinner_final = multi.add(spinner());
+
+    spinner_init.start("Preparing import");
+
     let mtls_helper = MtlsCredentialHelper::new()?;
 
     let path_params = ImportNbdVolumePathParams {
@@ -84,6 +92,8 @@ async fn process(
     };
 
     let submit_resp = storage_api.import_nbd_volume(&path_params, &req).await?;
+    spinner_init.start("Waiting for volume");
+    //TODO: Poll all the commands to provide more detailed status as import porgresses
 
     let cmd_api = api_client.command_api();
 
@@ -94,7 +104,11 @@ async fn process(
     let nbd_tls_hostname = mtls_helper.read_server_cert_hostname()?;
     let cert_dir = mtls_helper.write_credentials().await?.to_path_buf();
 
+    spinner_init.start("Waiting for deployment");
+
     let nbd = poll_for_nbd_response(&cmd_api, &submit_resp).await?;
+
+    spinner_init.stop("Deployment ready to receive import");
 
     let convert_cmd = QemuImgConvert {
         cert_dir,
@@ -108,15 +122,44 @@ async fn process(
     let progress_updater =
         CommandProgressUpdater::build(cmd_api, &submit_resp, "AWAIT_NBD_COMPLETION")?;
 
-    match convert_cmd.run().await {
-        Ok(_) => {
-            eprintln!("Import completed successfully");
-            progress_updater.complete(ApiCmdStatus::COMPLETE).await?;
-            Ok(())
-        }
-        Err(e) => {
-            progress_updater.complete(ApiCmdStatus::FAILED).await.ok();
-            Err(e.into())
+    let (progress, mut task) = convert_cmd.start().await;
+
+    let mut ui_tick = tokio::time::interval(tokio::time::Duration::from_millis(100));
+    let mut backend_tick = tokio::time::interval(tokio::time::Duration::from_millis(5000));
+    let mut waiting_for_completion = false;
+    loop {
+        tokio::select! {
+            _ = ui_tick.tick() => {
+                if !waiting_for_completion {
+                    let p = progress.read_progress();
+                    pb.set_position(p as u64);
+                    if p == 10000 {
+                        pb.stop("Sending data");
+                        waiting_for_completion = true;
+                        spinner_final.start("Waiting for completion");
+                    }
+                }
+            }
+            _ = backend_tick.tick() => {
+                // TODO: inform backend of progress
+            }
+            r = &mut task => {
+                return match QemuImgConvert::assert_ok(r) {
+                    Ok(_) => {
+                        progress_updater.complete(ApiCmdStatus::COMPLETE).await?;
+                        spinner_final.stop("Import complete");
+                        multi.stop();
+                        Ok(())
+                    }
+                    Err(e) => {
+                        progress_updater.complete(ApiCmdStatus::FAILED).await.ok();
+                        spinner_final.error("Import failed");
+                        multi.stop();
+
+                        Err(e.into())
+                    }
+                };
+            }
         }
     }
 }

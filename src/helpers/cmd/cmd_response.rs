@@ -38,7 +38,6 @@ pub async fn poll_for_cmd_response<T: DeserializeOwned>(
             }
             ApiCmdStatus::PENDING | ApiCmdStatus::INPROGRESS => {
                 tokio::time::sleep(std::time::Duration::from_secs(2)).await;
-                println!("polling");
             }
         }
     }
