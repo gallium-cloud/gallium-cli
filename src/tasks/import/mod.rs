@@ -21,9 +21,9 @@ pub(crate) struct ImportArguments {
     /// The ID or name of the disk pool where the import should be stored
     pool: Option<String>,
 
-    #[arg(short, long)]
+    #[arg(short, long, required = true)]
     /// Path to the image file or files to import
-    source: PathBuf,
+    source: Vec<PathBuf>,
 
     #[arg(short, long)]
     /// The deployment ID to import to
@@ -47,9 +47,12 @@ pub(crate) async fn import_main(
     let storage_api = api_client.storage_api();
     let disk_pool = determine_disk_pool(&storage_api, &args).await?;
 
-    let sources = scan_import_sources(&args.source).await?;
+    let mut import_sources = vec![];
+    for source in args.source.iter() {
+        import_sources.extend(scan_import_sources(source).await?);
+    }
 
-    for source in sources {
+    for source in import_sources {
         process(api_client.clone(), &args, &disk_pool, source).await?;
     }
 
