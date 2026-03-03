@@ -1,7 +1,7 @@
 mod disk_pool;
 mod source_scan;
 use crate::task_common::error::TaskError;
-use crate::tasks::import::source_scan::{ImportSource, scan_import_sources};
+use crate::tasks::import::source_scan::{ImportSource, ScanResult, scan_import_sources};
 
 use crate::api::ApiClient;
 use crate::api::command_v2_api::entities::ApiCmdStatus;
@@ -52,7 +52,11 @@ pub(crate) async fn import_main(
 
     let mut import_sources = vec![];
     for source in args.source.iter() {
-        import_sources.extend(scan_import_sources(source).await?);
+        let ScanResult { sources, warnings } = scan_import_sources(source).await?;
+        for warning in warnings {
+            log::warning(&warning).whatever_context::<_, TaskError>("writing to terminal")?;
+        }
+        import_sources.extend(sources);
     }
 
     if confirm_import(&import_sources, &disk_pool, &args)? {
