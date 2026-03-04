@@ -12,6 +12,9 @@ use crate::helpers::mtls::MtlsCredentialHelper;
 use crate::helpers::nbd::poll_for_nbd_response;
 use crate::helpers::qemu::QemuImgConvert;
 use crate::tasks::import::disk_pool::{DiskPoolDetermination, determine_disk_pool};
+use cliclack::{confirm, log, multi_progress, progress_bar, spinner};
+use humansize::{BINARY, format_size};
+use snafu::ResultExt;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -21,9 +24,9 @@ pub(crate) struct ImportArguments {
     /// The ID or name of the disk pool where the import should be stored
     pool: Option<String>,
 
-    #[arg(short, long)]
+    #[arg(short, long, required = true)]
     /// Path to the image file or files to import
-    source: PathBuf,
+    source: Vec<PathBuf>,
 
     #[arg(short, long)]
     /// The deployment ID to import to
@@ -47,13 +50,67 @@ pub(crate) async fn import_main(
     let storage_api = api_client.storage_api();
     let disk_pool = determine_disk_pool(&storage_api, &args).await?;
 
-    let sources = scan_import_sources(&args.source).await?;
+    let mut import_sources = vec![];
+    for source in args.source.iter() {
+        import_sources.extend(scan_import_sources(source).await?);
+    }
 
-    for source in sources {
-        process(api_client.clone(), &args, &disk_pool, source).await?;
+    if confirm_import(&import_sources, &disk_pool, &args)? {
+        for source in import_sources {
+            process(api_client.clone(), &args, &disk_pool, source).await?;
+        }
     }
 
     Ok(())
+}
+
+fn confirm_import(
+    sources: &[ImportSource],
+    disk_pool: &DiskPoolDetermination,
+    args: &ImportArguments,
+) -> Result<bool, TaskError> {
+    if sources.is_empty() {
+        log::warning("Nothing to import.")
+            .whatever_context::<_, TaskError>("writing to terminal")?;
+        return Ok(false);
+    }
+
+    let summary = sources
+        .iter()
+        .map(|s| {
+            format!(
+                "  {} (format: {}, volume size: {})",
+                s.name_part,
+                s.reported_format,
+                format_size(s.virtual_size_bytes, BINARY),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    log::info(format!(
+        "The following {} will be imported to disk pool \"{}\":\n{}",
+        if sources.len() == 1 { "file" } else { "files" },
+        disk_pool
+            .display_name
+            .as_deref()
+            .unwrap_or(&disk_pool.kube_name),
+        summary,
+    ))
+    .whatever_context::<_, TaskError>("writing to terminal")?;
+
+    if !args.yes {
+        let proceed = confirm("Proceed with import?")
+            .initial_value(true)
+            .interact()
+            .whatever_context::<_, TaskError>("reading confirmation")?;
+        if !proceed {
+            log::warning("Import cancelled.")
+                .whatever_context::<_, TaskError>("writing to terminal")?;
+            return Ok(false);
+        }
+    }
+
+    Ok(true)
 }
 
 async fn process(
@@ -63,6 +120,13 @@ async fn process(
     source: ImportSource,
 ) -> Result<(), TaskError> {
     let storage_api = api_client.storage_api();
+
+    let multi = multi_progress(format!("Importing {}", source.name_part));
+    let spinner_init = multi.add(spinner());
+    let pb = multi.add(progress_bar(10000));
+    let spinner_final = multi.add(spinner());
+
+    spinner_init.start("Preparing import");
 
     let mtls_helper = MtlsCredentialHelper::new()?;
 
@@ -81,6 +145,8 @@ async fn process(
     };
 
     let submit_resp = storage_api.import_nbd_volume(&path_params, &req).await?;
+    spinner_init.start("Waiting for volume");
+    //TODO: Poll all the commands to provide more detailed status as import porgresses
 
     let cmd_api = api_client.command_api();
 
@@ -91,7 +157,11 @@ async fn process(
     let nbd_tls_hostname = mtls_helper.read_server_cert_hostname()?;
     let cert_dir = mtls_helper.write_credentials().await?.to_path_buf();
 
+    spinner_init.start("Waiting for deployment");
+
     let nbd = poll_for_nbd_response(&cmd_api, &submit_resp).await?;
+
+    spinner_init.stop("Deployment ready to receive import");
 
     let convert_cmd = QemuImgConvert {
         cert_dir,
@@ -105,15 +175,44 @@ async fn process(
     let progress_updater =
         CommandProgressUpdater::build(cmd_api, &submit_resp, "AWAIT_NBD_COMPLETION")?;
 
-    match convert_cmd.run().await {
-        Ok(_) => {
-            eprintln!("Import completed successfully");
-            progress_updater.complete(ApiCmdStatus::COMPLETE).await?;
-            Ok(())
-        }
-        Err(e) => {
-            progress_updater.complete(ApiCmdStatus::FAILED).await.ok();
-            Err(e.into())
+    let (progress, mut task) = convert_cmd.start().await;
+
+    let mut ui_tick = tokio::time::interval(tokio::time::Duration::from_millis(100));
+    let mut backend_tick = tokio::time::interval(tokio::time::Duration::from_millis(5000));
+    let mut waiting_for_completion = false;
+    loop {
+        tokio::select! {
+            _ = ui_tick.tick() => {
+                if !waiting_for_completion {
+                    let p = progress.read_progress();
+                    pb.set_position(p as u64);
+                    if p == 10000 {
+                        pb.stop("Sending data");
+                        waiting_for_completion = true;
+                        spinner_final.start("Waiting for completion");
+                    }
+                }
+            }
+            _ = backend_tick.tick() => {
+                // TODO: inform backend of progress
+            }
+            r = &mut task => {
+                return match QemuImgConvert::assert_ok(r) {
+                    Ok(_) => {
+                        progress_updater.complete(ApiCmdStatus::COMPLETE).await?;
+                        spinner_final.stop("Import complete");
+                        multi.stop();
+                        Ok(())
+                    }
+                    Err(e) => {
+                        progress_updater.complete(ApiCmdStatus::FAILED).await.ok();
+                        spinner_final.error("Import failed");
+                        multi.stop();
+
+                        Err(e.into())
+                    }
+                };
+            }
         }
     }
 }

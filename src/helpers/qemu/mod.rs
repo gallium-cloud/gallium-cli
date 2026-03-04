@@ -1,6 +1,12 @@
+mod convert_progress;
+
 use crate::helpers::helper_cmd_error::HelperCommandError;
+use crate::helpers::qemu::convert_progress::{QemuConvertProgressProvider, report_progress};
 use qemu_img_cmd_types::info::QemuInfo;
 use std::path::{Path, PathBuf};
+use std::process::Output;
+use std::sync::Arc;
+use tokio::task::{JoinError, JoinHandle};
 
 pub async fn qemu_img_info(path: &Path) -> Result<QemuInfo, HelperCommandError> {
     let path_as_os_str = path.as_os_str().to_os_string();
@@ -26,7 +32,22 @@ pub struct QemuImgConvert {
 }
 
 impl QemuImgConvert {
-    pub async fn run(self) -> Result<(), HelperCommandError> {
+    pub fn assert_ok(
+        r: Result<Result<Option<Output>, std::io::Error>, JoinError>,
+    ) -> Result<(), HelperCommandError> {
+        r??;
+
+        Ok(())
+    }
+}
+
+impl QemuImgConvert {
+    pub async fn start(
+        self,
+    ) -> (
+        Arc<QemuConvertProgressProvider>,
+        JoinHandle<Result<Option<Output>, std::io::Error>>,
+    ) {
         let target_image_opts = format!(
             "driver=nbd,host={},port={},tls-creds=tls0,tls-hostname={}",
             self.nbd_host, self.nbd_port, self.nbd_tls_hostname
@@ -37,9 +58,10 @@ impl QemuImgConvert {
             self.cert_dir.display(),
             TLS_PRIORITY
         );
-
-        tokio::task::spawn_blocking(move || {
-            duct::cmd!(
+        let convert_progress_provider = Arc::new(QemuConvertProgressProvider::default());
+        let convert_progress_provider2 = convert_progress_provider.clone();
+        let task_handle = tokio::task::spawn_blocking(move || {
+            let reader = duct::cmd!(
                 "qemu-img",
                 "convert",
                 "-p", //Display progress bar
@@ -52,9 +74,10 @@ impl QemuImgConvert {
                 "--target-image-opts",
                 target_image_opts
             )
-            .run()
-        })
-        .await??;
-        Ok(())
+            .reader()?;
+            report_progress(convert_progress_provider2, reader)
+        });
+
+        (convert_progress_provider, task_handle)
     }
 }
