@@ -14,7 +14,7 @@ use crate::helpers::mtls::MtlsCredentialHelper;
 use crate::helpers::nbd::poll_for_nbd_response;
 use crate::helpers::qemu::QemuImgConvert;
 use crate::tasks::import::disk_pool::{DiskPoolDetermination, determine_disk_pool};
-use crate::tasks::import::param_helpers::truncate_name;
+use crate::tasks::import::param_helpers::{description, truncate_name};
 use cliclack::{confirm, log, multi_progress, progress_bar, spinner};
 use humansize::{BINARY, format_size};
 use snafu::ResultExt;
@@ -144,7 +144,7 @@ async fn process(
 
     let req = VolumeNbdImportRequest {
         csr_base64: mtls_helper.get_csr_base64()?,
-        volume_description: None,
+        volume_description: Some(description(&source.name_part)),
         volume_size_gb: source.virtual_size_gb_round_up()?,
         volume_storage_class: disk_pool.kube_name.clone(),
         volume_name: Some(truncate_name(&source.name_part)),

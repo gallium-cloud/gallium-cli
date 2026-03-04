@@ -1,3 +1,4 @@
+use chrono::Local;
 use unicode_segmentation::UnicodeSegmentation;
 
 pub fn truncate_name(filename: &str) -> String {
@@ -22,4 +23,10 @@ pub fn truncate_name(filename: &str) -> String {
 
     out.push_str(ELLIPSIS);
     out
+}
+
+pub fn description(filename: &str) -> String {
+    let now = Local::now();
+
+    format!("File: {filename}, Imported: {}", now.to_rfc2822())
 }
