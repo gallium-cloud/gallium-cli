@@ -1,5 +1,7 @@
 mod disk_pool;
+mod param_helpers;
 mod source_scan;
+
 use crate::task_common::error::TaskError;
 use crate::tasks::import::source_scan::{ImportSource, ScanResult, scan_import_sources};
 
@@ -12,6 +14,7 @@ use crate::helpers::mtls::MtlsCredentialHelper;
 use crate::helpers::nbd::poll_for_nbd_response;
 use crate::helpers::qemu::QemuImgConvert;
 use crate::tasks::import::disk_pool::{DiskPoolDetermination, determine_disk_pool};
+use crate::tasks::import::param_helpers::truncate_name;
 use cliclack::{confirm, log, multi_progress, progress_bar, spinner};
 use humansize::{BINARY, format_size};
 use snafu::ResultExt;
@@ -144,7 +147,7 @@ async fn process(
         volume_description: None,
         volume_size_gb: source.virtual_size_gb_round_up()?,
         volume_storage_class: disk_pool.kube_name.clone(),
-        volume_name: Some(source.name_part.clone()),
+        volume_name: Some(truncate_name(&source.name_part)),
         import_source_file_name: Some(source.name_part.clone()),
     };
 
