@@ -40,6 +40,8 @@ pub struct DiskPoolSummary {
     pub description: Option<String>,
     #[serde(rename = "isDefault")]
     pub is_default: bool,
+    #[serde(rename = "isUserDefault")]
+    pub is_user_default: bool,
     #[serde(rename = "kubeName")]
     pub kube_name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
