@@ -177,7 +177,7 @@ async fn process(
     };
 
     let progress_updater =
-        CommandProgressUpdater::build(cmd_api, &submit_resp, "AWAIT_NBD_COMPLETION")?;
+        CommandProgressUpdater::build_and_spawn(cmd_api, &submit_resp, "AWAIT_NBD_COMPLETION")?;
 
     let (progress, mut task) = convert_cmd.start().await;
 
@@ -203,7 +203,7 @@ async fn process(
                 }
             }
             _ = backend_tick.tick() => {
-                // TODO: inform backend of progress
+                progress_updater.update_progress(progress.read_progress()as f64, 10000.0);
             }
             r = &mut task => {
                 return match QemuImgConvert::assert_ok(r) {
