@@ -183,16 +183,21 @@ async fn process(
 
     let mut ui_tick = tokio::time::interval(tokio::time::Duration::from_millis(100));
     let mut backend_tick = tokio::time::interval(tokio::time::Duration::from_millis(5000));
-    let mut waiting_for_completion = false;
+
+    // qemu-img can take some time after progress has reached 100% before it will actually terminate.
+    // (it is waiting for the other side to fsync out the file, among other things)
+    // rather than show a progress bar stuck at 100%, switch to a spinner.
+    let mut waiting_for_cmd_to_complete = false;
+
     loop {
         tokio::select! {
             _ = ui_tick.tick() => {
-                if !waiting_for_completion {
+                if !waiting_for_cmd_to_complete {
                     let p = progress.read_progress();
                     pb.set_position(p as u64);
                     if p == 10000 {
                         pb.stop("Sending data");
-                        waiting_for_completion = true;
+                        waiting_for_cmd_to_complete = true;
                         spinner_final.start("Waiting for completion");
                     }
                 }
