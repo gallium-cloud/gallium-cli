@@ -2,6 +2,7 @@ mod convert_progress;
 
 use crate::helpers::helper_cmd_error::HelperCommandError;
 use crate::helpers::qemu::convert_progress::{QemuConvertProgressProvider, report_progress};
+use duct::Expression;
 use qemu_img_cmd_types::info::QemuInfo;
 use std::path::{Path, PathBuf};
 use std::process::Output;
@@ -54,6 +55,22 @@ impl QemuImgConvert {
             self.nbd_host, self.nbd_port, self.nbd_tls_hostname
         )
     }
+
+    fn build_expression(&self) -> Expression {
+        duct::cmd!(
+            "qemu-img",
+            "convert",
+            "-p", //Display progress bar
+            "-n", //Skip the creation of the target volume
+            "-f",
+            &self.source_format,
+            &self.source_file,
+            "--object",
+            &self.tls_object_arg(),
+            "--target-image-opts",
+            &self.nbd_image_opts_arg(),
+        )
+    }
 }
 
 pub async fn qemu_img_convert(
@@ -65,20 +82,7 @@ pub async fn qemu_img_convert(
     let convert_progress_provider = Arc::new(QemuConvertProgressProvider::default());
     let convert_progress_provider2 = convert_progress_provider.clone();
     let task_handle = tokio::task::spawn_blocking(move || {
-        let reader = duct::cmd!(
-            "qemu-img",
-            "convert",
-            "-p", //Display progress bar
-            "-n", //Skip the creation of the target volume
-            "-f",
-            &args.source_format,
-            &args.source_file,
-            "--object",
-            &args.tls_object_arg(),
-            "--target-image-opts",
-            &args.nbd_image_opts_arg(),
-        )
-        .reader()?;
+        let reader = args.build_expression().reader()?;
         report_progress(convert_progress_provider2, reader)
     });
 
