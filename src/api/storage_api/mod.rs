@@ -2,8 +2,8 @@ use crate::api::errors::ApiClientError;
 
 use crate::api::ApiClient;
 use crate::api::storage_api::entities::{
-    CmdSubmitResponse, DiskPoolListResponse, ImportNbdVolumePathParams, ListDiskPoolsPathParams,
-    VolumeNbdImportRequest,
+    CmdSubmitResponse, DiskPoolListResponse, ExportNbdVolumePathParams, ImportNbdVolumePathParams,
+    ListDiskPoolsPathParams, VolumeNbdExportRequest, VolumeNbdImportRequest,
 };
 use derive_more::Constructor;
 use reqwest::Method;
@@ -48,6 +48,30 @@ impl StorageApi {
                     &path_params.kube_ns,
                     "nbd",
                     "import",
+                ],
+            )?
+            .json(request_body)
+            .send()
+            .await?;
+        self.api_client.deser_response(response).await
+    }
+    pub async fn export_nbd_volume(
+        &self,
+        path_params: &ExportNbdVolumePathParams,
+        request_body: &VolumeNbdExportRequest,
+    ) -> Result<CmdSubmitResponse, ApiClientError> {
+        let response = self
+            .api_client
+            .request_authed(
+                Method::POST,
+                &[
+                    "cluster-api",
+                    &path_params.cluster_id,
+                    "volume",
+                    &path_params.kube_ns,
+                    &path_params.kube_name,
+                    "nbd",
+                    "export",
                 ],
             )?
             .json(request_body)
