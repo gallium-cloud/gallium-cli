@@ -39,6 +39,21 @@ impl QemuImgConvert {
 
         Ok(())
     }
+    fn tls_object_arg(&self) -> String {
+        format!(
+            "tls-creds-x509,id=tls0,endpoint=client,dir={},priority={}",
+            self.cert_dir.display(),
+            TLS_PRIORITY
+        )
+    }
+
+    /// Format the nbd settings into the required format for either --image-opts or --target-image-opts
+    fn nbd_image_opts_arg(&self) -> String {
+        format!(
+            "driver=nbd,host={},port={},tls-creds=tls0,tls-hostname={}",
+            self.nbd_host, self.nbd_port, self.nbd_tls_hostname
+        )
+    }
 }
 
 pub async fn qemu_img_convert(
@@ -47,16 +62,6 @@ pub async fn qemu_img_convert(
     Arc<QemuConvertProgressProvider>,
     JoinHandle<Result<Option<Output>, std::io::Error>>,
 ) {
-    let target_image_opts = format!(
-        "driver=nbd,host={},port={},tls-creds=tls0,tls-hostname={}",
-        args.nbd_host, args.nbd_port, args.nbd_tls_hostname
-    );
-
-    let tls_object = format!(
-        "tls-creds-x509,id=tls0,endpoint=client,dir={},priority={}",
-        args.cert_dir.display(),
-        TLS_PRIORITY
-    );
     let convert_progress_provider = Arc::new(QemuConvertProgressProvider::default());
     let convert_progress_provider2 = convert_progress_provider.clone();
     let task_handle = tokio::task::spawn_blocking(move || {
@@ -69,9 +74,9 @@ pub async fn qemu_img_convert(
             &args.source_format,
             &args.source_file,
             "--object",
-            tls_object,
+            &args.tls_object_arg(),
             "--target-image-opts",
-            target_image_opts
+            &args.nbd_image_opts_arg(),
         )
         .reader()?;
         report_progress(convert_progress_provider2, reader)
