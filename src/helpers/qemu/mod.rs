@@ -40,6 +40,10 @@ pub enum ConvertOperation {
         source_file: PathBuf,
         source_format: String,
     },
+    Export {
+        target_file: PathBuf,
+        target_format: String,
+    },
 }
 
 impl QemuImgConvert {
@@ -84,6 +88,23 @@ impl QemuImgConvert {
                     &self.tls_object_arg(),
                     "--target-image-opts",
                     &self.nbd_image_opts_arg(),
+                )
+            }
+            ConvertOperation::Export {
+                ref target_file,
+                ref target_format,
+            } => {
+                duct::cmd!(
+                    "qemu-img",
+                    "convert",
+                    "-p", //Display progress bar
+                    "--object",
+                    &self.tls_object_arg(),
+                    "--image-opts",
+                    &self.nbd_image_opts_arg(),
+                    "-O",
+                    target_format,
+                    target_file,
                 )
             }
         }
