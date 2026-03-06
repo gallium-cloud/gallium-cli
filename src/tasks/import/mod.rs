@@ -1,7 +1,9 @@
 mod disk_pool;
+mod param_helpers;
 mod source_scan;
+
 use crate::task_common::error::TaskError;
-use crate::tasks::import::source_scan::{ImportSource, scan_import_sources};
+use crate::tasks::import::source_scan::{ImportSource, ScanResult, scan_import_sources};
 
 use crate::api::ApiClient;
 use crate::api::command_v2_api::entities::ApiCmdStatus;
@@ -12,6 +14,7 @@ use crate::helpers::mtls::MtlsCredentialHelper;
 use crate::helpers::nbd::poll_for_nbd_response;
 use crate::helpers::qemu::{ConvertOperation, QemuImgConvert, qemu_img_convert};
 use crate::tasks::import::disk_pool::{DiskPoolDetermination, determine_disk_pool};
+use crate::tasks::import::param_helpers::{description, truncate_name};
 use cliclack::{confirm, log, multi_progress, progress_bar, spinner};
 use humansize::{BINARY, format_size};
 use snafu::ResultExt;
@@ -52,7 +55,11 @@ pub(crate) async fn import_main(
 
     let mut import_sources = vec![];
     for source in args.source.iter() {
-        import_sources.extend(scan_import_sources(source).await?);
+        let ScanResult { sources, warnings } = scan_import_sources(source).await?;
+        for warning in warnings {
+            log::warning(&warning).whatever_context::<_, TaskError>("writing to terminal")?;
+        }
+        import_sources.extend(sources);
     }
 
     if confirm_import(&import_sources, &disk_pool, &args)? {
@@ -137,10 +144,10 @@ async fn process(
 
     let req = VolumeNbdImportRequest {
         csr_base64: mtls_helper.get_csr_base64()?,
-        volume_description: None,
+        volume_description: Some(description(&source.name_part)),
         volume_size_gb: source.virtual_size_gb_round_up()?,
         volume_storage_class: disk_pool.kube_name.clone(),
-        volume_name: Some(source.name_part.clone()),
+        volume_name: Some(truncate_name(&source.name_part)),
         import_source_file_name: Some(source.name_part.clone()),
     };
 
@@ -175,28 +182,33 @@ async fn process(
     };
 
     let progress_updater =
-        CommandProgressUpdater::build(cmd_api, &submit_resp, "AWAIT_NBD_COMPLETION")?;
+        CommandProgressUpdater::build_and_spawn(cmd_api, &submit_resp, "AWAIT_NBD_COMPLETION")?;
 
     let (progress, mut task) = qemu_img_convert(convert_cmd).await;
 
     let mut ui_tick = tokio::time::interval(tokio::time::Duration::from_millis(100));
     let mut backend_tick = tokio::time::interval(tokio::time::Duration::from_millis(5000));
-    let mut waiting_for_completion = false;
+
+    // qemu-img can take some time after progress has reached 100% before it will actually terminate.
+    // (it is waiting for the other side to fsync out the file, among other things)
+    // rather than show a progress bar stuck at 100%, switch to a spinner.
+    let mut waiting_for_cmd_to_complete = false;
+
     loop {
         tokio::select! {
             _ = ui_tick.tick() => {
-                if !waiting_for_completion {
+                if !waiting_for_cmd_to_complete {
                     let p = progress.read_progress();
                     pb.set_position(p as u64);
                     if p == 10000 {
                         pb.stop("Sending data");
-                        waiting_for_completion = true;
+                        waiting_for_cmd_to_complete = true;
                         spinner_final.start("Waiting for completion");
                     }
                 }
             }
             _ = backend_tick.tick() => {
-                // TODO: inform backend of progress
+                progress_updater.update_progress(progress.read_progress()as f64, 10000.0);
             }
             r = &mut task => {
                 return match QemuImgConvert::assert_ok(r) {

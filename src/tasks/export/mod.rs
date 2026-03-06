@@ -103,7 +103,7 @@ async fn process(
     };
 
     let progress_updater =
-        CommandProgressUpdater::build(cmd_api, &submit_resp, "AWAIT_NBD_COMPLETION")?;
+        CommandProgressUpdater::build_and_spawn(cmd_api, &submit_resp, "AWAIT_NBD_COMPLETION")?;
 
     //TODO: this is copy-pasted from import, it should be factored out.
     // (but, does it need the same logic around waiting for completion?)
