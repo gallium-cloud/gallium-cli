@@ -18,6 +18,9 @@ async fn main() -> Result<(), TaskError> {
 
     match invocation.action {
         Some(Action::Proxy(args)) => crate::tasks_internal::proxy::proxy(&args).await,
+        Some(Action::Export(args)) => {
+            crate::tasks::export::export_main(&invocation.gargs, args).await
+        }
         Some(Action::Import(args)) => {
             crate::tasks::import::import_main(&invocation.gargs, args).await
         }
