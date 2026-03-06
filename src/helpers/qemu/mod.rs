@@ -41,43 +41,41 @@ impl QemuImgConvert {
     }
 }
 
-impl QemuImgConvert {
-    pub async fn start(
-        self,
-    ) -> (
-        Arc<QemuConvertProgressProvider>,
-        JoinHandle<Result<Option<Output>, std::io::Error>>,
-    ) {
-        let target_image_opts = format!(
-            "driver=nbd,host={},port={},tls-creds=tls0,tls-hostname={}",
-            self.nbd_host, self.nbd_port, self.nbd_tls_hostname
-        );
+pub async fn qemu_img_convert(
+    args: QemuImgConvert,
+) -> (
+    Arc<QemuConvertProgressProvider>,
+    JoinHandle<Result<Option<Output>, std::io::Error>>,
+) {
+    let target_image_opts = format!(
+        "driver=nbd,host={},port={},tls-creds=tls0,tls-hostname={}",
+        args.nbd_host, args.nbd_port, args.nbd_tls_hostname
+    );
 
-        let tls_object = format!(
-            "tls-creds-x509,id=tls0,endpoint=client,dir={},priority={}",
-            self.cert_dir.display(),
-            TLS_PRIORITY
-        );
-        let convert_progress_provider = Arc::new(QemuConvertProgressProvider::default());
-        let convert_progress_provider2 = convert_progress_provider.clone();
-        let task_handle = tokio::task::spawn_blocking(move || {
-            let reader = duct::cmd!(
-                "qemu-img",
-                "convert",
-                "-p", //Display progress bar
-                "-n", //Skip the creation of the target volume
-                "-f",
-                &self.source_format,
-                &self.source_file,
-                "--object",
-                tls_object,
-                "--target-image-opts",
-                target_image_opts
-            )
-            .reader()?;
-            report_progress(convert_progress_provider2, reader)
-        });
+    let tls_object = format!(
+        "tls-creds-x509,id=tls0,endpoint=client,dir={},priority={}",
+        args.cert_dir.display(),
+        TLS_PRIORITY
+    );
+    let convert_progress_provider = Arc::new(QemuConvertProgressProvider::default());
+    let convert_progress_provider2 = convert_progress_provider.clone();
+    let task_handle = tokio::task::spawn_blocking(move || {
+        let reader = duct::cmd!(
+            "qemu-img",
+            "convert",
+            "-p", //Display progress bar
+            "-n", //Skip the creation of the target volume
+            "-f",
+            &args.source_format,
+            &args.source_file,
+            "--object",
+            tls_object,
+            "--target-image-opts",
+            target_image_opts
+        )
+        .reader()?;
+        report_progress(convert_progress_provider2, reader)
+    });
 
-        (convert_progress_provider, task_handle)
-    }
+    (convert_progress_provider, task_handle)
 }

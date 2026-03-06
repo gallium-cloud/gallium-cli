@@ -12,7 +12,7 @@ use crate::helpers::auth::get_login_response_for_saved_credentials;
 use crate::helpers::cmd::cmd_progress::CommandProgressUpdater;
 use crate::helpers::mtls::MtlsCredentialHelper;
 use crate::helpers::nbd::poll_for_nbd_response;
-use crate::helpers::qemu::QemuImgConvert;
+use crate::helpers::qemu::{QemuImgConvert, qemu_img_convert};
 use crate::tasks::import::disk_pool::{DiskPoolDetermination, determine_disk_pool};
 use crate::tasks::import::param_helpers::{description, truncate_name};
 use cliclack::{confirm, log, multi_progress, progress_bar, spinner};
@@ -182,7 +182,7 @@ async fn process(
     let progress_updater =
         CommandProgressUpdater::build_and_spawn(cmd_api, &submit_resp, "AWAIT_NBD_COMPLETION")?;
 
-    let (progress, mut task) = convert_cmd.start().await;
+    let (progress, mut task) = qemu_img_convert(convert_cmd).await;
 
     let mut ui_tick = tokio::time::interval(tokio::time::Duration::from_millis(100));
     let mut backend_tick = tokio::time::interval(tokio::time::Duration::from_millis(5000));
