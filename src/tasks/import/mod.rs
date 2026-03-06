@@ -10,7 +10,7 @@ use crate::helpers::auth::get_login_response_for_saved_credentials;
 use crate::helpers::cmd::cmd_progress::CommandProgressUpdater;
 use crate::helpers::mtls::MtlsCredentialHelper;
 use crate::helpers::nbd::poll_for_nbd_response;
-use crate::helpers::qemu::{QemuImgConvert, qemu_img_convert};
+use crate::helpers::qemu::{ConvertOperation, QemuImgConvert, qemu_img_convert};
 use crate::tasks::import::disk_pool::{DiskPoolDetermination, determine_disk_pool};
 use cliclack::{confirm, log, multi_progress, progress_bar, spinner};
 use humansize::{BINARY, format_size};
@@ -168,8 +168,10 @@ async fn process(
         nbd_tls_hostname,
         nbd_host: nbd.host_ip,
         nbd_port: nbd.host_port,
-        source_file: source.file_path,
-        source_format: source.reported_format,
+        op: ConvertOperation::Import {
+            source_file: source.file_path,
+            source_format: source.reported_format,
+        },
     };
 
     let progress_updater =

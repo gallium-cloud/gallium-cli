@@ -28,8 +28,18 @@ pub struct QemuImgConvert {
     pub nbd_tls_hostname: String,
     pub nbd_host: String,
     pub nbd_port: u16,
-    pub source_file: PathBuf,
-    pub source_format: String,
+    pub op: ConvertOperation,
+}
+
+// Eventually I'd like to build a proper abstraction here - the QemuImgConvert should take a
+// Source and Target - but that will lead to a lot more scenarios that will need to be tested.
+// For now we'll just have separate operations for Import (Local -> NBD) and Export (NBD -> Local)
+// to keep things simpler.
+pub enum ConvertOperation {
+    Import {
+        source_file: PathBuf,
+        source_format: String,
+    },
 }
 
 impl QemuImgConvert {
@@ -57,19 +67,26 @@ impl QemuImgConvert {
     }
 
     fn build_expression(&self) -> Expression {
-        duct::cmd!(
-            "qemu-img",
-            "convert",
-            "-p", //Display progress bar
-            "-n", //Skip the creation of the target volume
-            "-f",
-            &self.source_format,
-            &self.source_file,
-            "--object",
-            &self.tls_object_arg(),
-            "--target-image-opts",
-            &self.nbd_image_opts_arg(),
-        )
+        match self.op {
+            ConvertOperation::Import {
+                ref source_file,
+                ref source_format,
+            } => {
+                duct::cmd!(
+                    "qemu-img",
+                    "convert",
+                    "-p", //Display progress bar
+                    "-n", //Skip the creation of the target volume
+                    "-f",
+                    source_format,
+                    source_file,
+                    "--object",
+                    &self.tls_object_arg(),
+                    "--target-image-opts",
+                    &self.nbd_image_opts_arg(),
+                )
+            }
+        }
     }
 }
 
