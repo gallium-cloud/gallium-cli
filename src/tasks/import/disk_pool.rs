@@ -52,11 +52,11 @@ pub async fn determine_disk_pool(
                 reason: "Matching pool does not exist",
             })
         }
-    } else if let Some(pool) = disk_pools.iter().find(|p| p.is_default) {
+    } else if let Some(pool) = disk_pools.iter().find(|p| p.is_user_default) {
         Ok(DiskPoolDetermination::from_summary(pool, "Pool is default"))
     } else {
         Err(TaskError::InvalidState {
-            reason: "No default pool in deployment, and pool not specified.",
+            reason: "No default pool in deployment. Specify desired pool with --pool <pool_name>",
         })
     }
 }

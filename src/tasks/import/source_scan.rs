@@ -11,15 +11,23 @@ pub struct ImportSource {
     pub reported_format: String,
     pub virtual_size_bytes: u64,
 }
-pub async fn scan_import_sources(source: &Path) -> Result<Vec<ImportSource>, TaskError> {
+pub struct ScanResult {
+    pub sources: Vec<ImportSource>,
+    pub warnings: Vec<String>,
+}
+
+pub async fn scan_import_sources(source: &Path) -> Result<ScanResult, TaskError> {
     let source_metadata = fs::metadata(source)
         .await
         .whatever_context::<_, TaskError>("Query filesystem metadata")?;
 
     if source_metadata.is_dir() {
-        todo!("scan directory");
+        scan_directory(source).await
     } else if source_metadata.is_file() {
-        Ok(vec![scan_file(source).await?])
+        Ok(ScanResult {
+            sources: vec![scan_file(source).await?],
+            warnings: vec![],
+        })
     } else if source_metadata.is_symlink() {
         Err(TaskError::RequestedOperationNotSupported {
             op: "import",
@@ -32,6 +40,43 @@ pub async fn scan_import_sources(source: &Path) -> Result<Vec<ImportSource>, Tas
             reason: "Source file type not supported".to_string(),
         })
     }
+}
+
+const SUPPORTED_EXTENSIONS: &[&str] = &["qcow2", "vmdk", "img", "vhd", "vhdx"];
+
+async fn scan_directory(dir: &Path) -> Result<ScanResult, TaskError> {
+    let mut entries = fs::read_dir(dir)
+        .await
+        .whatever_context::<_, TaskError>("Read source directory")?;
+
+    let mut sources = vec![];
+    let mut warnings = vec![];
+    while let Some(entry) = entries
+        .next_entry()
+        .await
+        .whatever_context::<_, TaskError>("Read directory entry")?
+    {
+        let path = entry.path();
+        let is_supported = path
+            .extension()
+            .and_then(|ext| ext.to_str())
+            .is_some_and(|ext| SUPPORTED_EXTENSIONS.contains(&ext));
+        if !is_supported {
+            continue;
+        }
+        match scan_file(&path).await {
+            Ok(source) => sources.push(source),
+            Err(e) => {
+                warnings.push(format!(
+                    "Skipping {:?}: {}",
+                    path.file_name().unwrap_or_default(),
+                    e
+                ));
+            }
+        }
+    }
+
+    Ok(ScanResult { sources, warnings })
 }
 
 async fn scan_file(file_path: &Path) -> Result<ImportSource, TaskError> {
