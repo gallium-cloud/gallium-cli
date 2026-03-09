@@ -2,6 +2,7 @@ mod convert_progress;
 
 use crate::helpers::helper_cmd_error::HelperCommandError;
 use crate::helpers::qemu::convert_progress::{QemuConvertProgressProvider, report_progress};
+use duct::Expression;
 use qemu_img_cmd_types::info::QemuInfo;
 use std::path::{Path, PathBuf};
 use std::process::Output;
@@ -27,8 +28,22 @@ pub struct QemuImgConvert {
     pub nbd_tls_hostname: String,
     pub nbd_host: String,
     pub nbd_port: u16,
-    pub source_file: PathBuf,
-    pub source_format: String,
+    pub op: ConvertOperation,
+}
+
+// Eventually I'd like to build a proper abstraction here - the QemuImgConvert should take a
+// Source and Target - but that will lead to a lot more scenarios that will need to be tested.
+// For now we'll just have separate operations for Import (Local -> NBD) and Export (NBD -> Local)
+// to keep things simpler.
+pub enum ConvertOperation {
+    Import {
+        source_file: PathBuf,
+        source_format: String,
+    },
+    Export {
+        target_file: PathBuf,
+        target_format: String,
+    },
 }
 
 impl QemuImgConvert {
@@ -39,45 +54,75 @@ impl QemuImgConvert {
 
         Ok(())
     }
-}
-
-impl QemuImgConvert {
-    pub async fn start(
-        self,
-    ) -> (
-        Arc<QemuConvertProgressProvider>,
-        JoinHandle<Result<Option<Output>, std::io::Error>>,
-    ) {
-        let target_image_opts = format!(
-            "driver=nbd,host={},port={},tls-creds=tls0,tls-hostname={}",
-            self.nbd_host, self.nbd_port, self.nbd_tls_hostname
-        );
-
-        let tls_object = format!(
+    fn tls_object_arg(&self) -> String {
+        format!(
             "tls-creds-x509,id=tls0,endpoint=client,dir={},priority={}",
             self.cert_dir.display(),
             TLS_PRIORITY
-        );
-        let convert_progress_provider = Arc::new(QemuConvertProgressProvider::default());
-        let convert_progress_provider2 = convert_progress_provider.clone();
-        let task_handle = tokio::task::spawn_blocking(move || {
-            let reader = duct::cmd!(
-                "qemu-img",
-                "convert",
-                "-p", //Display progress bar
-                "-n", //Skip the creation of the target volume
-                "-f",
-                &self.source_format,
-                &self.source_file,
-                "--object",
-                tls_object,
-                "--target-image-opts",
-                target_image_opts
-            )
-            .reader()?;
-            report_progress(convert_progress_provider2, reader)
-        });
-
-        (convert_progress_provider, task_handle)
+        )
     }
+
+    /// Format the nbd settings into the required format for either --image-opts or --target-image-opts
+    fn nbd_image_opts_arg(&self) -> String {
+        format!(
+            "driver=nbd,host={},port={},tls-creds=tls0,tls-hostname={}",
+            self.nbd_host, self.nbd_port, self.nbd_tls_hostname
+        )
+    }
+
+    fn build_expression(&self) -> Expression {
+        match self.op {
+            ConvertOperation::Import {
+                ref source_file,
+                ref source_format,
+            } => {
+                duct::cmd!(
+                    "qemu-img",
+                    "convert",
+                    "-p", //Display progress bar
+                    "-n", //Skip the creation of the target volume
+                    "-f",
+                    source_format,
+                    source_file,
+                    "--object",
+                    &self.tls_object_arg(),
+                    "--target-image-opts",
+                    &self.nbd_image_opts_arg(),
+                )
+            }
+            ConvertOperation::Export {
+                ref target_file,
+                ref target_format,
+            } => {
+                duct::cmd!(
+                    "qemu-img",
+                    "convert",
+                    "-p", //Display progress bar
+                    "--object",
+                    &self.tls_object_arg(),
+                    "--image-opts",
+                    &self.nbd_image_opts_arg(),
+                    "-O",
+                    target_format,
+                    target_file,
+                )
+            }
+        }
+    }
+}
+
+pub async fn qemu_img_convert(
+    args: QemuImgConvert,
+) -> (
+    Arc<QemuConvertProgressProvider>,
+    JoinHandle<Result<Option<Output>, std::io::Error>>,
+) {
+    let convert_progress_provider = Arc::new(QemuConvertProgressProvider::default());
+    let convert_progress_provider2 = convert_progress_provider.clone();
+    let task_handle = tokio::task::spawn_blocking(move || {
+        let reader = args.build_expression().reader()?;
+        report_progress(convert_progress_provider2, reader)
+    });
+
+    (convert_progress_provider, task_handle)
 }

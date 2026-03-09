@@ -57,6 +57,14 @@ pub struct DiskPoolListResponse {
 /// An identifier that uniquely identifies an event, user, resource object, etc in Gallium's platform.
 pub type GalliumSlug = String;
 
+/// Path parameters for ExportNbdVolume POST /cluster-api/{cluster_id}/volume/{kube_ns}/{kube_name}/nbd/export
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ExportNbdVolumePathParams {
+    pub cluster_id: GalliumSlug,
+    pub kube_name: String,
+    pub kube_ns: String,
+}
+
 /// Path parameters for ImportNbdVolume POST /cluster-api/{cluster_id}/volume/{kube_ns}/nbd/import
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ImportNbdVolumePathParams {
@@ -68,6 +76,18 @@ pub struct ImportNbdVolumePathParams {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListDiskPoolsPathParams {
     pub cluster_id: GalliumSlug,
+}
+
+// =============================================================================
+// POST /cluster-api/{cluster_id}/volume/{kube_ns}/{kube_name}/nbd/export ExportNbdVolume
+// Command to export a volume via NBD
+// Content-Type: application/json
+// Security: bearerAuth
+// =============================================================================
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VolumeNbdExportRequest {
+    #[serde(rename = "csrBase64")]
+    pub csr_base64: String,
 }
 
 // =============================================================================
