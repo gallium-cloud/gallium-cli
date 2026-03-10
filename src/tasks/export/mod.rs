@@ -8,9 +8,11 @@ use crate::helpers::auth::get_login_response_for_saved_credentials;
 use crate::helpers::cmd::cmd_progress::CommandProgressUpdater;
 use crate::helpers::mtls::MtlsCredentialHelper;
 use crate::helpers::nbd::poll_for_nbd_response;
+
 use crate::helpers::qemu::{ConvertOperation, QemuImgConvert, qemu_img_convert};
 use crate::task_common::error::TaskError;
 use crate::tasks::export::format::ExportFormat;
+use crate::tasks_internal::qemu_img::ensure_qemu_img;
 use cliclack::{multi_progress, progress_bar, spinner};
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -53,6 +55,8 @@ async fn process(
     vol_name: String,
     exp_format: ExportFormat,
 ) -> Result<(), TaskError> {
+    let qemu_img = ensure_qemu_img().await?;
+
     let storage_api = api_client.storage_api();
 
     let export_filename = format!("{vol_name}_export{}", exp_format.as_ext());
@@ -107,7 +111,7 @@ async fn process(
 
     //TODO: this is copy-pasted from import, it should be factored out.
     // (but, does it need the same logic around waiting for completion?)
-    let (progress, mut task) = qemu_img_convert(convert_cmd).await;
+    let (progress, mut task) = qemu_img_convert(qemu_img.clone(), convert_cmd).await;
 
     let mut ui_tick = tokio::time::interval(tokio::time::Duration::from_millis(100));
     let mut backend_tick = tokio::time::interval(tokio::time::Duration::from_millis(5000));

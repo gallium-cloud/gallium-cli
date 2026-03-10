@@ -10,6 +10,8 @@ pub enum HelperCommandError {
     TaskPanicked { source: tokio::task::JoinError },
     #[snafu(display("Helper command returned invalid response: {reason}"))]
     InvalidResponse { reason: &'static str },
+    #[snafu(display("qemu-img not found"))]
+    QemuImgNotFound,
     #[snafu(whatever, display("{message}"))]
     UnhandledError {
         message: String,
