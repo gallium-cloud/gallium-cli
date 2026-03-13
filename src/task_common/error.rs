@@ -21,7 +21,7 @@ pub enum TaskError {
     },
     #[snafu(display("Requested operation not supported ({op}): {reason}"))]
     RequestedOperationNotSupported { op: &'static str, reason: String },
-    #[snafu(transparent)]
+    #[snafu(display("API Client Error"), context(false))]
     ApiClientError { source: ApiClientError },
     #[snafu(display("API Response missing expected field: {field}"))]
     ApiResponseMissingField { field: &'static str },
@@ -32,7 +32,7 @@ pub enum TaskError {
         cmd_type: String,
         serde_err: Option<serde_json::Error>,
     },
-    #[snafu(transparent)]
+    #[snafu(display("Helper command error"), context(false))]
     HelperCommand { source: HelperCommandError },
     #[snafu(display("Failed to initialize {name}"))]
     Initialize {

@@ -2,11 +2,11 @@ use snafu::prelude::*;
 
 #[derive(Debug, Snafu)]
 pub enum HelperCommandError {
-    #[snafu(transparent)]
+    #[snafu(display("JSON Serialization/Deserialization error"), context(false))]
     JsonError { source: serde_json::Error },
-    #[snafu(transparent)]
+    #[snafu(display("IO Error"), context(false))]
     IoError { source: std::io::Error },
-    #[snafu(transparent)]
+    #[snafu(display("Task Panicked"), context(false))]
     TaskPanicked { source: tokio::task::JoinError },
     #[snafu(display("Helper command returned invalid response: {reason}"))]
     InvalidResponse { reason: &'static str },
