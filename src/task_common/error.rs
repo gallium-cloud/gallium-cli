@@ -3,6 +3,7 @@ use crate::helpers::helper_cmd_error::HelperCommandError;
 use snafu::prelude::*;
 
 #[derive(Debug, Snafu)]
+#[snafu(visibility(pub))]
 pub enum TaskError {
     #[snafu(display("Missing or invalid input for {field}"))]
     UserInputInvalid { field: &'static str },
@@ -32,7 +33,7 @@ pub enum TaskError {
         cmd_type: String,
         serde_err: Option<serde_json::Error>,
     },
-    #[snafu(display("Helper command error"), context(false))]
+    #[snafu(display("Helper command error"))]
     HelperCommand { source: HelperCommandError },
     #[snafu(display("Failed to initialize {name}"))]
     Initialize {

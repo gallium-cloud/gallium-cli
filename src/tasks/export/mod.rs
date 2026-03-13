@@ -8,6 +8,8 @@ use crate::helpers::auth::get_login_response_for_saved_credentials;
 use crate::helpers::cmd::cmd_progress::CommandProgressUpdater;
 use crate::helpers::mtls::MtlsCredentialHelper;
 use crate::helpers::nbd::poll_for_nbd_response;
+use crate::task_common::error::HelperCommandSnafu;
+use snafu::ResultExt;
 
 use crate::helpers::qemu::{ConvertOperation, QemuImgConvert, qemu_img_convert};
 use crate::task_common::error::TaskError;
@@ -55,7 +57,7 @@ async fn process(
     vol_name: String,
     exp_format: ExportFormat,
 ) -> Result<(), TaskError> {
-    let qemu_img = ensure_qemu_img().await?;
+    let qemu_img = ensure_qemu_img().await.context(HelperCommandSnafu)?;
 
     let storage_api = api_client.storage_api();
 
@@ -66,7 +68,7 @@ async fn process(
     let pb = multi.add(progress_bar(10000));
     let spinner_final = multi.add(spinner());
 
-    let mtls_helper = MtlsCredentialHelper::new()?;
+    let mtls_helper = MtlsCredentialHelper::new().context(HelperCommandSnafu)?;
 
     let path_params = ExportNbdVolumePathParams {
         cluster_id: source,
@@ -75,7 +77,7 @@ async fn process(
     };
 
     let req = VolumeNbdExportRequest {
-        csr_base64: mtls_helper.get_csr_base64()?,
+        csr_base64: mtls_helper.get_csr_base64().context(HelperCommandSnafu)?,
     };
 
     let submit_resp = storage_api.export_nbd_volume(&path_params, &req).await?;
@@ -86,8 +88,14 @@ async fn process(
         .poll_for_credentials(&cmd_api, &submit_resp)
         .await?;
 
-    let nbd_tls_hostname = mtls_helper.read_server_cert_hostname()?;
-    let cert_dir = mtls_helper.write_credentials().await?.to_path_buf();
+    let nbd_tls_hostname = mtls_helper
+        .read_server_cert_hostname()
+        .context(HelperCommandSnafu)?;
+    let cert_dir = mtls_helper
+        .write_credentials()
+        .await
+        .context(HelperCommandSnafu)?
+        .to_path_buf();
 
     spinner_init.start("Waiting for deployment");
 
@@ -145,7 +153,7 @@ async fn process(
                         spinner_final.error("Export failed");
                         multi.stop();
 
-                        Err(e.into())
+                        Err(TaskError::HelperCommand { source: e })
                     }
                 };
             }

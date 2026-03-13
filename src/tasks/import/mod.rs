@@ -14,6 +14,7 @@ use crate::helpers::mtls::MtlsCredentialHelper;
 use crate::helpers::nbd::poll_for_nbd_response;
 use crate::helpers::qemu::qemu_img_cmd_provider::QemuImgCmdProvider;
 use crate::helpers::qemu::{ConvertOperation, QemuImgConvert, qemu_img_convert};
+use crate::task_common::error::HelperCommandSnafu;
 use crate::tasks::import::disk_pool::{DiskPoolDetermination, determine_disk_pool};
 use crate::tasks::import::param_helpers::{description, truncate_name};
 use crate::tasks_internal::qemu_img::ensure_qemu_img;
@@ -46,7 +47,7 @@ pub(crate) async fn import_main(
     global_args: &crate::args::GlobalArguments,
     args: ImportArguments,
 ) -> Result<(), TaskError> {
-    let qemu_img = ensure_qemu_img().await?;
+    let qemu_img = ensure_qemu_img().await.context(HelperCommandSnafu)?;
 
     let api_client = global_args.build_api_client()?.with_access_token(
         get_login_response_for_saved_credentials(global_args)
@@ -140,7 +141,7 @@ async fn process(
 
     spinner_init.start("Preparing import");
 
-    let mtls_helper = MtlsCredentialHelper::new()?;
+    let mtls_helper = MtlsCredentialHelper::new().context(HelperCommandSnafu)?;
 
     let path_params = ImportNbdVolumePathParams {
         cluster_id: import_args.target.clone(),
@@ -148,7 +149,7 @@ async fn process(
     };
 
     let req = VolumeNbdImportRequest {
-        csr_base64: mtls_helper.get_csr_base64()?,
+        csr_base64: mtls_helper.get_csr_base64().context(HelperCommandSnafu)?,
         volume_description: Some(description(&source.name_part)),
         volume_size_gb: source.virtual_size_gb_round_up()?,
         volume_storage_class: disk_pool.kube_name.clone(),
@@ -166,8 +167,14 @@ async fn process(
         .poll_for_credentials(&cmd_api, &submit_resp)
         .await?;
 
-    let nbd_tls_hostname = mtls_helper.read_server_cert_hostname()?;
-    let cert_dir = mtls_helper.write_credentials().await?.to_path_buf();
+    let nbd_tls_hostname = mtls_helper
+        .read_server_cert_hostname()
+        .context(HelperCommandSnafu)?;
+    let cert_dir = mtls_helper
+        .write_credentials()
+        .await
+        .context(HelperCommandSnafu)?
+        .to_path_buf();
 
     spinner_init.start("Waiting for deployment");
 
@@ -228,7 +235,7 @@ async fn process(
                         spinner_final.error("Import failed");
                         multi.stop();
 
-                        Err(e.into())
+                        Err(TaskError::HelperCommand { source: e })
                     }
                 };
             }

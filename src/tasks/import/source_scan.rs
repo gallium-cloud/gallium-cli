@@ -1,10 +1,9 @@
 use crate::helpers::qemu::qemu_img_cmd_provider::QemuImgCmdProvider;
 use crate::helpers::qemu::qemu_img_info;
-use crate::task_common::error::TaskError;
+use crate::task_common::error::{HelperCommandSnafu, TaskError};
 use snafu::ResultExt;
 use std::path::{Path, PathBuf};
 use tokio::fs;
-
 #[derive(Clone, Debug)]
 pub struct ImportSource {
     pub file_path: PathBuf,
@@ -90,7 +89,9 @@ async fn scan_file(
     qemu_img: &QemuImgCmdProvider,
     file_path: &Path,
 ) -> Result<ImportSource, TaskError> {
-    let info = qemu_img_info(qemu_img.clone(), file_path).await?;
+    let info = qemu_img_info(qemu_img.clone(), file_path)
+        .await
+        .context(HelperCommandSnafu)?;
     let name_part = file_path
         .file_name()
         .map(|s| s.to_string_lossy().to_string())
