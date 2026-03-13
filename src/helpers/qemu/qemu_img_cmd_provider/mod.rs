@@ -1,3 +1,5 @@
+pub mod dl_win;
+
 use crate::helpers::helper_cmd_error::HelperCommandError;
 use std::path::PathBuf;
 use which::which;
@@ -20,7 +22,7 @@ impl QemuImgCmdProvider {
         }
 
         #[cfg(target_os = "windows")]
-        return download_qemu_img().await;
+        return find_in_cache().await;
 
         #[cfg(not(target_os = "windows"))]
         return find_in_path().await;
@@ -28,8 +30,13 @@ impl QemuImgCmdProvider {
 }
 
 #[cfg(target_os = "windows")]
-async fn download_qemu_img() -> Result<PathBuf, HelperCommandError> {
-    Err(HelperCommandError::QemuImgNotFound)
+async fn find_in_cache() -> Result<QemuImgCmdProvider, HelperCommandError> {
+    let bin_path = dl_win::cache_dir_qemu_img_exe_path()?;
+    if tokio::fs::try_exists(&bin_path).await.unwrap_or(false) {
+        Ok(QemuImgCmdProvider { bin_path })
+    } else {
+        Err(HelperCommandError::QemuImgNotFound)
+    }
 }
 #[cfg(not(target_os = "windows"))]
 async fn find_in_path() -> Result<QemuImgCmdProvider, HelperCommandError> {

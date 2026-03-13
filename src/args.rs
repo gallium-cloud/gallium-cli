@@ -25,6 +25,8 @@ pub struct GlobalArguments {
 #[derive(clap::Subcommand)]
 pub enum Action {
     #[clap(hide = true)]
+    DlQemuImg,
+    #[clap(hide = true)]
     Proxy(crate::tasks_internal::proxy::ProxyArguments),
 
     /// Export virtual disks from a Gallium deployment

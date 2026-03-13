@@ -16,6 +16,7 @@ base64 = "0.22.1"
 clap = { version = "4.5.60", features = ["cargo", "derive"] }
 derive_more = { version = "2.1.1", features = ["constructor"] }
 dialoguer = { version = "0.12.0" }
+dlmgr = "0.3.1"
 duct = { version = "1.1.1" }
 futures-util = { version = "0.3" }
 home = { version = "0.5.12" }
@@ -38,6 +39,8 @@ cliclack = "0.3.9"
 unicode-segmentation = "1.12.0"
 chrono = "0.4.44"
 which = "8.0.2"
+directories = "6.0.0"
+hex-literal = "1.1.0"
 
 
 [build-dependencies]

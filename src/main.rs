@@ -17,6 +17,7 @@ async fn main() -> Result<(), TaskError> {
     let invocation = Invocation::parse();
 
     match invocation.action {
+        Some(Action::DlQemuImg) => crate::tasks_internal::qemu_img::dl_qemu_img().await,
         Some(Action::Proxy(args)) => crate::tasks_internal::proxy::proxy(&args).await,
         Some(Action::Export(args)) => {
             crate::tasks::export::export_main(&invocation.gargs, args).await

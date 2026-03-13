@@ -1,16 +1,43 @@
 use crate::helpers::helper_cmd_error::HelperCommandError;
 use crate::helpers::qemu::qemu_img_cmd_provider::QemuImgCmdProvider;
-use cliclack::log;
+use crate::helpers::qemu::qemu_img_cmd_provider::dl_win::download_qemu_img;
+use crate::task_common::error::{HelperCommandSnafu, TaskError};
+use cliclack::{confirm, log};
+use snafu::ResultExt;
 use std::collections::HashSet;
 
 pub async fn ensure_qemu_img() -> Result<QemuImgCmdProvider, HelperCommandError> {
     match QemuImgCmdProvider::find_bin().await {
         Ok(bin) => Ok(bin),
         Err(HelperCommandError::QemuImgNotFound) => {
-            print_qemu_img_error().await?;
-            Err(HelperCommandError::QemuImgNotFound)
+            if cfg!(target_os = "windows") {
+                offer_dl_qemu_img_windows().await
+            } else {
+                print_qemu_img_error().await?;
+                Err(HelperCommandError::QemuImgNotFound)
+            }
         }
         Err(e) => Err(e),
+    }
+}
+
+pub async fn dl_qemu_img() -> Result<(), TaskError> {
+    offer_dl_qemu_img_windows()
+        .await
+        .context(HelperCommandSnafu)?;
+
+    Ok(())
+}
+
+pub async fn offer_dl_qemu_img_windows() -> Result<QemuImgCmdProvider, HelperCommandError> {
+    if confirm("QEMU Image tools are required to import/export. Download now?")
+        .initial_value(true)
+        .interact()?
+    {
+        download_qemu_img().await?;
+        QemuImgCmdProvider::find_bin().await
+    } else {
+        Err(HelperCommandError::QemuImgNotFound)
     }
 }
 
