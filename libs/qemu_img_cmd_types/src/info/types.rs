@@ -11,7 +11,7 @@ pub struct QemuInfo {
     #[serde(rename = "actual-size")]
     pub actual_size: u64,
     #[serde(rename = "dirty-flag")]
-    pub dirty_flag: bool,
+    pub dirty_flag: Option<bool>,
     pub children: Vec<Box<QemuInfoChild>>,
     #[serde(rename = "format-specific", skip_serializing_if = "Option::is_none")]
     pub format_specific: Option<QemuInfoFormatSpecific>,
