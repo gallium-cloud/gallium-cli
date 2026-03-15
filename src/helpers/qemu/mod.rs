@@ -106,7 +106,7 @@ impl QemuImgConvert {
                 ref target_format,
             } => {
                 duct::cmd!(
-                    "qemu-img",
+                    &qemu_img.bin_path,
                     "convert",
                     "-p", //Display progress bar
                     "--object",
