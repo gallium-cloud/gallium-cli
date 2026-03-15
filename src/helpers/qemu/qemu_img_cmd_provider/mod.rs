@@ -2,7 +2,6 @@ pub mod dl_win;
 
 use crate::helpers::helper_cmd_error::HelperCommandError;
 use std::path::PathBuf;
-use which::which;
 
 #[derive(Clone)]
 pub struct QemuImgCmdProvider {
@@ -40,6 +39,7 @@ async fn find_in_cache() -> Result<QemuImgCmdProvider, HelperCommandError> {
 }
 #[cfg(not(target_os = "windows"))]
 async fn find_in_path() -> Result<QemuImgCmdProvider, HelperCommandError> {
+    use which::which;
     match tokio::task::spawn_blocking(|| which("qemu-img")).await? {
         Ok(bin_path) => Ok(QemuImgCmdProvider { bin_path }),
         Err(which::Error::CannotFindBinaryPath) => Err(HelperCommandError::QemuImgNotFound),
