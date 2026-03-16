@@ -1,7 +1,6 @@
 mod format;
 
 use crate::api::ApiClient;
-use crate::api::command_v2_api::entities::ApiCmdStatus;
 use crate::api::storage_api::entities::{ExportNbdVolumePathParams, VolumeNbdExportRequest};
 use crate::args::GlobalArguments;
 use crate::helpers::auth::get_login_response_for_saved_credentials;
@@ -12,10 +11,10 @@ use crate::task_common::error::HelperCommandSnafu;
 use snafu::ResultExt;
 
 use crate::helpers::qemu::{ConvertOperation, QemuImgConvert, qemu_img_convert};
+use crate::helpers::ui::transfer_progress_ui::{TransferProgressUi, transfer_progress_ui};
 use crate::task_common::error::TaskError;
 use crate::tasks::export::format::ExportFormat;
 use crate::tasks_internal::qemu_img::ensure_qemu_img;
-use cliclack::{multi_progress, progress_bar, spinner};
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -63,10 +62,7 @@ async fn process(
 
     let export_filename = format!("{vol_name}_export{}", exp_format.as_ext());
 
-    let multi = multi_progress(format!("Exporting {vol_name} to {export_filename}"));
-    let spinner_init = multi.add(spinner());
-    let pb = multi.add(progress_bar(10000));
-    let spinner_final = multi.add(spinner());
+    let ui = TransferProgressUi::init(format!("Exporting {vol_name} to {export_filename}"));
 
     let mtls_helper = MtlsCredentialHelper::new().context(HelperCommandSnafu)?;
 
@@ -97,11 +93,11 @@ async fn process(
         .context(HelperCommandSnafu)?
         .to_path_buf();
 
-    spinner_init.start("Waiting for deployment");
+    ui.spinner_init.start("Waiting for deployment");
 
     let nbd = poll_for_nbd_response(&cmd_api, &submit_resp).await?;
 
-    spinner_init.stop("Deployment waiting for connection");
+    ui.spinner_init.stop("Deployment waiting for connection");
 
     let convert_cmd = QemuImgConvert {
         cert_dir,
@@ -117,46 +113,6 @@ async fn process(
     let progress_updater =
         CommandProgressUpdater::build_and_spawn(cmd_api, &submit_resp, "AWAIT_NBD_COMPLETION")?;
 
-    //TODO: this is copy-pasted from import, it should be factored out.
-    // (but, does it need the same logic around waiting for completion?)
-    let mut convert_task = qemu_img_convert(qemu_img.clone(), convert_cmd).await;
-
-    let mut ui_tick = tokio::time::interval(tokio::time::Duration::from_millis(100));
-    let mut backend_tick = tokio::time::interval(tokio::time::Duration::from_millis(5000));
-    let mut waiting_for_completion = false;
-    loop {
-        tokio::select! {
-            _ = ui_tick.tick() => {
-                if !waiting_for_completion {
-                    let p = convert_task.progress.read_progress();
-                    pb.set_position(p as u64);
-                    if p == 10000 {
-                        pb.stop("Sending data");
-                        waiting_for_completion = true;
-                        spinner_final.start("Waiting for completion");
-                    }
-                }
-            }
-            _ = backend_tick.tick() => {
-                // TODO: inform backend of progress
-            }
-            r = &mut convert_task.handle => {
-                return match QemuImgConvert::assert_ok(r) {
-                    Ok(_) => {
-                        progress_updater.complete(ApiCmdStatus::COMPLETE).await?;
-                        spinner_final.stop("Export complete");
-                        multi.stop();
-                        Ok(())
-                    }
-                    Err(e) => {
-                        progress_updater.complete(ApiCmdStatus::FAILED).await.ok();
-                        spinner_final.error("Export failed");
-                        multi.stop();
-
-                        Err(TaskError::HelperCommand { source: e })
-                    }
-                };
-            }
-        }
-    }
+    let convert_task = qemu_img_convert(qemu_img.clone(), convert_cmd).await;
+    transfer_progress_ui(convert_task, progress_updater, ui).await
 }

@@ -60,13 +60,13 @@ pub async fn transfer_progress_ui(
                 return match QemuImgConvert::assert_ok(r) {
                     Ok(_) => {
                         progress_updater.complete(ApiCmdStatus::COMPLETE).await?;
-                        ui.spinner_final.stop("Import complete");
+                        ui.spinner_final.stop("Complete");
                         ui.multi.stop();
                         Ok(())
                     }
                     Err(e) => {
                         progress_updater.complete(ApiCmdStatus::FAILED).await.ok();
-                        ui.spinner_final.error("Import failed");
+                        ui.spinner_final.error("Failed");
                         ui.multi.stop();
 
                         Err(TaskError::HelperCommand { source: e })
