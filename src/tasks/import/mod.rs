@@ -196,7 +196,7 @@ async fn process(
     let progress_updater =
         CommandProgressUpdater::build_and_spawn(cmd_api, &submit_resp, "AWAIT_NBD_COMPLETION")?;
 
-    let (progress, mut task) = qemu_img_convert(qemu_img.clone(), convert_cmd).await;
+    let mut convert_task = qemu_img_convert(qemu_img.clone(), convert_cmd).await;
 
     let mut ui_tick = tokio::time::interval(tokio::time::Duration::from_millis(100));
     let mut backend_tick = tokio::time::interval(tokio::time::Duration::from_millis(5000));
@@ -210,7 +210,7 @@ async fn process(
         tokio::select! {
             _ = ui_tick.tick() => {
                 if !waiting_for_cmd_to_complete {
-                    let p = progress.read_progress();
+                    let p = convert_task.progress.read_progress();
                     pb.set_position(p as u64);
                     if p == 10000 {
                         pb.stop("Sending data");
@@ -220,9 +220,9 @@ async fn process(
                 }
             }
             _ = backend_tick.tick() => {
-                progress_updater.update_progress(progress.read_progress()as f64, 10000.0);
+                progress_updater.update_progress(convert_task.progress.read_progress() as f64, 10000.0);
             }
-            r = &mut task => {
+            r = &mut convert_task.handle => {
                 return match QemuImgConvert::assert_ok(r) {
                     Ok(_) => {
                         progress_updater.complete(ApiCmdStatus::COMPLETE).await?;

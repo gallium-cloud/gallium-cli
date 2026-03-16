@@ -119,7 +119,7 @@ async fn process(
 
     //TODO: this is copy-pasted from import, it should be factored out.
     // (but, does it need the same logic around waiting for completion?)
-    let (progress, mut task) = qemu_img_convert(qemu_img.clone(), convert_cmd).await;
+    let mut convert_task = qemu_img_convert(qemu_img.clone(), convert_cmd).await;
 
     let mut ui_tick = tokio::time::interval(tokio::time::Duration::from_millis(100));
     let mut backend_tick = tokio::time::interval(tokio::time::Duration::from_millis(5000));
@@ -128,7 +128,7 @@ async fn process(
         tokio::select! {
             _ = ui_tick.tick() => {
                 if !waiting_for_completion {
-                    let p = progress.read_progress();
+                    let p = convert_task.progress.read_progress();
                     pb.set_position(p as u64);
                     if p == 10000 {
                         pb.stop("Sending data");
@@ -140,7 +140,7 @@ async fn process(
             _ = backend_tick.tick() => {
                 // TODO: inform backend of progress
             }
-            r = &mut task => {
+            r = &mut convert_task.handle => {
                 return match QemuImgConvert::assert_ok(r) {
                     Ok(_) => {
                         progress_updater.complete(ApiCmdStatus::COMPLETE).await?;
