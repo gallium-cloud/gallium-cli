@@ -20,15 +20,14 @@ impl QemuImgCmdProvider {
             };
         }
 
-        #[cfg(target_os = "windows")]
-        return find_in_cache().await;
-
-        #[cfg(not(target_os = "windows"))]
-        return find_in_path().await;
+        if cfg!(target_os = "windows") {
+            find_in_cache().await
+        } else {
+            find_in_path().await
+        }
     }
 }
 
-#[cfg(target_os = "windows")]
 async fn find_in_cache() -> Result<QemuImgCmdProvider, HelperCommandError> {
     let bin_path = dl_win::cache_dir_qemu_img_exe_path()?;
     if tokio::fs::try_exists(&bin_path).await.unwrap_or(false) {
@@ -37,7 +36,7 @@ async fn find_in_cache() -> Result<QemuImgCmdProvider, HelperCommandError> {
         Err(HelperCommandError::QemuImgNotFound)
     }
 }
-#[cfg(not(target_os = "windows"))]
+
 async fn find_in_path() -> Result<QemuImgCmdProvider, HelperCommandError> {
     use which::which;
     match tokio::task::spawn_blocking(|| which("qemu-img")).await? {
