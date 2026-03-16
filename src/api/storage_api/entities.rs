@@ -78,6 +78,48 @@ pub struct ListDiskPoolsPathParams {
     pub cluster_id: GalliumSlug,
 }
 
+/// Path parameters for ListVolumes GET /cluster-api/{cluster_id}/volume/{kube_ns}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ListVolumesPathParams {
+    pub cluster_id: GalliumSlug,
+    pub kube_ns: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum VolumeTypeLabel {
+    TemplateImage,
+    Iso,
+    UserStorage,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Volume {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(rename = "kubeName")]
+    pub kube_name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    /// The total size of the volume
+    #[serde(rename = "sizeBytes")]
+    pub size_bytes: u64,
+    #[serde(rename = "storageClass")]
+    pub storage_class: String,
+    /// The amount of data that is actually allocated within the volume (actualSize in longhorn terminology). NOTE: Space free-ed by the OS may not be reliably reclaimed.
+    #[serde(rename = "usedSizeBytes")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub used_size_bytes: Option<u64>,
+    #[serde(rename = "volumeType")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub volume_type: Option<VolumeTypeLabel>,
+}
+
+/// Response for ListVolumes GET /cluster-api/{cluster_id}/volume/{kube_ns}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VolumeListResponse {
+    pub volumes: Vec<Volume>,
+}
+
 // =============================================================================
 // POST /cluster-api/{cluster_id}/volume/{kube_ns}/{kube_name}/nbd/export ExportNbdVolume
 // Command to export a volume via NBD
@@ -117,6 +159,13 @@ pub struct VolumeNbdImportRequest {
 // =============================================================================
 // GET /cluster-api/{cluster_id}/storage-class ListDiskPools
 // List existing disk pools
+// Security: bearerAuth
+// =============================================================================
+// (no request body)
+
+// =============================================================================
+// GET /cluster-api/{cluster_id}/volume/{kube_ns} ListVolumes
+// List existing volumes
 // Security: bearerAuth
 // =============================================================================
 // (no request body)

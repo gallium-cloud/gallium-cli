@@ -1,6 +1,7 @@
 use crate::api::common_api::entities::GalliumApiErrorResponse;
 use crate::api::errors::ApiClientError;
 
+use crate::api::cluster_vm_api::ClusterVmApi;
 use crate::api::command_v2_api::CommandApi;
 use crate::api::login_api::LoginApi;
 use crate::api::storage_api::StorageApi;
@@ -11,6 +12,7 @@ use serde::de::DeserializeOwned;
 use std::sync::Arc;
 use url::Url;
 
+mod cluster_vm_api;
 pub mod command_v2_api;
 mod common_api;
 pub mod errors;
@@ -112,6 +114,10 @@ impl ApiClient {
                 error: response.json::<GalliumApiErrorResponse>().await?,
             })
         }
+    }
+
+    pub fn cluster_vm_api(self: &Arc<Self>) -> ClusterVmApi {
+        ClusterVmApi::new(self.clone())
     }
 
     pub fn login_api(self: &Arc<Self>) -> LoginApi {
