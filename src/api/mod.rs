@@ -12,7 +12,7 @@ use serde::de::DeserializeOwned;
 use std::sync::Arc;
 use url::Url;
 
-mod cluster_vm_api;
+pub mod cluster_vm_api;
 pub mod command_v2_api;
 mod common_api;
 pub mod errors;

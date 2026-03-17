@@ -1,4 +1,6 @@
 mod format;
+mod ui_confirm;
+mod volume_scan;
 
 use crate::api::ApiClient;
 use crate::api::storage_api::entities::{ExportNbdVolumePathParams, VolumeNbdExportRequest};
@@ -14,6 +16,8 @@ use crate::helpers::qemu::{ConvertOperation, QemuImgConvert, qemu_img_convert};
 use crate::helpers::ui::transfer_progress_ui::{TransferProgressUi, transfer_progress_ui};
 use crate::task_common::error::TaskError;
 use crate::tasks::export::format::ExportFormat;
+use crate::tasks::export::ui_confirm::confirm_export;
+use crate::tasks::export::volume_scan::{ScannedVolume, scan_volumes_for_export};
 use crate::tasks_internal::qemu_img::ensure_qemu_img;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -24,13 +28,21 @@ pub struct ExportArguments {
     #[arg(short, long)]
     pub source: String,
 
-    /// Volume ID to export
-    #[arg(short, long)]
-    pub vol: String,
+    /// Volume names / IDs to export
+    #[arg(short = 'n', long)]
+    pub vol: Vec<String>,
+
+    /// Virtual machine names / Ids to export
+    #[arg(short = 'v', long)]
+    pub vm: Vec<String>,
 
     /// Format to export
     #[arg(short, long)]
     pub format: ExportFormat,
+
+    #[arg(short, long)]
+    /// Do not ask for confirmation - just go ahead if parameters are valid
+    yes: bool,
 }
 pub async fn export_main(
     global_args: &GlobalArguments,
@@ -42,33 +54,49 @@ pub async fn export_main(
             .try_into()?,
     );
 
-    //TODO: confirm  parameters are correct, source volume exists,
-    // free space for export, etc
-
-    process(api_client, args.source, args.vol, args.format).await?;
+    let volumes = scan_volumes_for_export(&api_client, &args).await?;
+    if confirm_export(&volumes, &args)? {
+        for volume in volumes {
+            process(&api_client, args.source.clone(), volume, args.format).await?;
+        }
+    }
 
     Ok(())
 }
 
 async fn process(
-    api_client: Arc<ApiClient>,
+    api_client: &Arc<ApiClient>,
     source: String,
-    vol_name: String,
+    volume: ScannedVolume,
     exp_format: ExportFormat,
 ) -> Result<(), TaskError> {
     let qemu_img = ensure_qemu_img().await.context(HelperCommandSnafu)?;
 
     let storage_api = api_client.storage_api();
 
-    let export_filename = format!("{vol_name}_export{}", exp_format.as_ext());
+    let export_filename = format!("{}_export{}", volume.kube_name, exp_format.as_ext());
 
-    let ui = TransferProgressUi::init(format!("Exporting {vol_name} to {export_filename}"));
+    let export_file: PathBuf;
+    if let Some(dir_name) = volume.vm_name.as_deref() {
+        tokio::fs::create_dir_all(&dir_name)
+            .await
+            .whatever_context::<_, TaskError>("create dir for vm exports")?;
+        export_file = PathBuf::from(dir_name).join(&export_filename);
+    } else {
+        export_file = PathBuf::from(&export_filename);
+    }
+
+    let ui = TransferProgressUi::init(format!(
+        "Exporting {} to {}",
+        volume.kube_name,
+        export_file.display()
+    ));
 
     let mtls_helper = MtlsCredentialHelper::new().context(HelperCommandSnafu)?;
 
     let path_params = ExportNbdVolumePathParams {
         cluster_id: source,
-        kube_name: vol_name,
+        kube_name: volume.kube_name,
         kube_ns: "default".to_string(),
     };
 
@@ -105,7 +133,7 @@ async fn process(
         nbd_host: nbd.host_ip,
         nbd_port: nbd.host_port,
         op: ConvertOperation::Export {
-            target_file: PathBuf::from(export_filename),
+            target_file: export_file,
             target_format: exp_format.as_qemu_img_fmt().to_string(),
         },
     };
