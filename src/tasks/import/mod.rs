@@ -25,6 +25,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 #[derive(clap::Parser)]
+#[clap(arg_required_else_help = true)]
 pub(crate) struct ImportArguments {
     #[arg(short, long)]
     /// The ID or name of the disk pool where the import should be stored

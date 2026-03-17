@@ -23,6 +23,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 #[derive(clap::Args)]
+#[clap(arg_required_else_help = true)]
 pub struct ExportArguments {
     /// Deployment ID to export from
     #[arg(short, long)]
