@@ -1,7 +1,9 @@
 mod convert_progress;
+pub mod qemu_img_cmd_provider;
 
 use crate::helpers::helper_cmd_error::HelperCommandError;
 use crate::helpers::qemu::convert_progress::{QemuConvertProgressProvider, report_progress};
+use crate::helpers::qemu::qemu_img_cmd_provider::QemuImgCmdProvider;
 use duct::Expression;
 use qemu_img_cmd_types::info::QemuInfo;
 use std::path::{Path, PathBuf};
@@ -9,12 +11,21 @@ use std::process::Output;
 use std::sync::Arc;
 use tokio::task::{JoinError, JoinHandle};
 
-pub async fn qemu_img_info(path: &Path) -> Result<QemuInfo, HelperCommandError> {
+pub async fn qemu_img_info(
+    qemu_img: QemuImgCmdProvider,
+    path: &Path,
+) -> Result<QemuInfo, HelperCommandError> {
     let path_as_os_str = path.as_os_str().to_os_string();
     let qemu_info_json = tokio::task::spawn_blocking(move || {
-        duct::cmd!("qemu-img", "info", "--output", "json", &path_as_os_str)
-            .stdout_capture()
-            .read()
+        duct::cmd!(
+            qemu_img.bin_path,
+            "info",
+            "--output",
+            "json",
+            &path_as_os_str
+        )
+        .stdout_capture()
+        .read()
     })
     .await??;
 
@@ -70,14 +81,14 @@ impl QemuImgConvert {
         )
     }
 
-    fn build_expression(&self) -> Expression {
+    fn build_expression(&self, qemu_img: QemuImgCmdProvider) -> Expression {
         match self.op {
             ConvertOperation::Import {
                 ref source_file,
                 ref source_format,
             } => {
                 duct::cmd!(
-                    "qemu-img",
+                    &qemu_img.bin_path,
                     "convert",
                     "-p", //Display progress bar
                     "-n", //Skip the creation of the target volume
@@ -95,7 +106,7 @@ impl QemuImgConvert {
                 ref target_format,
             } => {
                 duct::cmd!(
-                    "qemu-img",
+                    &qemu_img.bin_path,
                     "convert",
                     "-p", //Display progress bar
                     "--object",
@@ -112,6 +123,7 @@ impl QemuImgConvert {
 }
 
 pub async fn qemu_img_convert(
+    qemu_img: QemuImgCmdProvider,
     args: QemuImgConvert,
 ) -> (
     Arc<QemuConvertProgressProvider>,
@@ -120,7 +132,7 @@ pub async fn qemu_img_convert(
     let convert_progress_provider = Arc::new(QemuConvertProgressProvider::default());
     let convert_progress_provider2 = convert_progress_provider.clone();
     let task_handle = tokio::task::spawn_blocking(move || {
-        let reader = args.build_expression().reader()?;
+        let reader = args.build_expression(qemu_img).reader()?;
         report_progress(convert_progress_provider2, reader)
     });
 

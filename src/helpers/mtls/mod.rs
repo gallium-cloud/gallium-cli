@@ -3,6 +3,7 @@ use crate::api::storage_api::entities::CmdSubmitResponse;
 use crate::helpers::cmd::cmd_response::poll_for_cmd_response_type;
 use crate::helpers::helper_cmd_error::HelperCommandError;
 use crate::helpers::mtls::init_mtls_cmd::InitMtlsCredentialsCmdResponse;
+use crate::task_common::error::HelperCommandSnafu;
 use crate::task_common::error::TaskError;
 use base64::Engine;
 use base64::engine::GeneralPurpose;
@@ -57,7 +58,9 @@ impl MtlsCredentialHelper {
         let init_response: InitMtlsCredentialsCmdResponse =
             poll_for_cmd_response_type(cmd_api, submit_resp, "INIT_MTLS_CREDENTIALS").await?;
 
-        Ok(MtlsIssuedCredentialHelper::build(self.keypair, init_response).await?)
+        MtlsIssuedCredentialHelper::build(self.keypair, init_response)
+            .await
+            .context(HelperCommandSnafu)
     }
 }
 

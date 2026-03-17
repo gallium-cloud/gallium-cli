@@ -1,9 +1,9 @@
+use crate::helpers::qemu::qemu_img_cmd_provider::QemuImgCmdProvider;
 use crate::helpers::qemu::qemu_img_info;
-use crate::task_common::error::TaskError;
+use crate::task_common::error::{HelperCommandSnafu, TaskError};
 use snafu::ResultExt;
 use std::path::{Path, PathBuf};
 use tokio::fs;
-
 #[derive(Clone, Debug)]
 pub struct ImportSource {
     pub file_path: PathBuf,
@@ -16,16 +16,19 @@ pub struct ScanResult {
     pub warnings: Vec<String>,
 }
 
-pub async fn scan_import_sources(source: &Path) -> Result<ScanResult, TaskError> {
+pub async fn scan_import_sources(
+    qemu_img: &QemuImgCmdProvider,
+    source: &Path,
+) -> Result<ScanResult, TaskError> {
     let source_metadata = fs::metadata(source)
         .await
         .whatever_context::<_, TaskError>("Query filesystem metadata")?;
 
     if source_metadata.is_dir() {
-        scan_directory(source).await
+        scan_directory(qemu_img, source).await
     } else if source_metadata.is_file() {
         Ok(ScanResult {
-            sources: vec![scan_file(source).await?],
+            sources: vec![scan_file(qemu_img, source).await?],
             warnings: vec![],
         })
     } else if source_metadata.is_symlink() {
@@ -44,7 +47,10 @@ pub async fn scan_import_sources(source: &Path) -> Result<ScanResult, TaskError>
 
 const SUPPORTED_EXTENSIONS: &[&str] = &["qcow2", "vmdk", "img", "vhd", "vhdx"];
 
-async fn scan_directory(dir: &Path) -> Result<ScanResult, TaskError> {
+async fn scan_directory(
+    qemu_img: &QemuImgCmdProvider,
+    dir: &Path,
+) -> Result<ScanResult, TaskError> {
     let mut entries = fs::read_dir(dir)
         .await
         .whatever_context::<_, TaskError>("Read source directory")?;
@@ -64,7 +70,7 @@ async fn scan_directory(dir: &Path) -> Result<ScanResult, TaskError> {
         if !is_supported {
             continue;
         }
-        match scan_file(&path).await {
+        match scan_file(qemu_img, &path).await {
             Ok(source) => sources.push(source),
             Err(e) => {
                 warnings.push(format!(
@@ -79,8 +85,13 @@ async fn scan_directory(dir: &Path) -> Result<ScanResult, TaskError> {
     Ok(ScanResult { sources, warnings })
 }
 
-async fn scan_file(file_path: &Path) -> Result<ImportSource, TaskError> {
-    let info = qemu_img_info(file_path).await?;
+async fn scan_file(
+    qemu_img: &QemuImgCmdProvider,
+    file_path: &Path,
+) -> Result<ImportSource, TaskError> {
+    let info = qemu_img_info(qemu_img.clone(), file_path)
+        .await
+        .context(HelperCommandSnafu)?;
     let name_part = file_path
         .file_name()
         .map(|s| s.to_string_lossy().to_string())

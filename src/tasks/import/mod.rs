@@ -12,9 +12,12 @@ use crate::helpers::auth::get_login_response_for_saved_credentials;
 use crate::helpers::cmd::cmd_progress::CommandProgressUpdater;
 use crate::helpers::mtls::MtlsCredentialHelper;
 use crate::helpers::nbd::poll_for_nbd_response;
+use crate::helpers::qemu::qemu_img_cmd_provider::QemuImgCmdProvider;
 use crate::helpers::qemu::{ConvertOperation, QemuImgConvert, qemu_img_convert};
+use crate::task_common::error::HelperCommandSnafu;
 use crate::tasks::import::disk_pool::{DiskPoolDetermination, determine_disk_pool};
 use crate::tasks::import::param_helpers::{description, truncate_name};
+use crate::tasks_internal::qemu_img::ensure_qemu_img;
 use cliclack::{confirm, log, multi_progress, progress_bar, spinner};
 use humansize::{BINARY, format_size};
 use snafu::ResultExt;
@@ -44,6 +47,8 @@ pub(crate) async fn import_main(
     global_args: &crate::args::GlobalArguments,
     args: ImportArguments,
 ) -> Result<(), TaskError> {
+    let qemu_img = ensure_qemu_img().await.context(HelperCommandSnafu)?;
+
     let api_client = global_args.build_api_client()?.with_access_token(
         get_login_response_for_saved_credentials(global_args)
             .await?
@@ -55,7 +60,7 @@ pub(crate) async fn import_main(
 
     let mut import_sources = vec![];
     for source in args.source.iter() {
-        let ScanResult { sources, warnings } = scan_import_sources(source).await?;
+        let ScanResult { sources, warnings } = scan_import_sources(&qemu_img, source).await?;
         for warning in warnings {
             log::warning(&warning).whatever_context::<_, TaskError>("writing to terminal")?;
         }
@@ -64,7 +69,7 @@ pub(crate) async fn import_main(
 
     if confirm_import(&import_sources, &disk_pool, &args)? {
         for source in import_sources {
-            process(api_client.clone(), &args, &disk_pool, source).await?;
+            process(&qemu_img, api_client.clone(), &args, &disk_pool, source).await?;
         }
     }
 
@@ -121,6 +126,7 @@ fn confirm_import(
 }
 
 async fn process(
+    qemu_img: &QemuImgCmdProvider,
     api_client: Arc<ApiClient>,
     import_args: &ImportArguments,
     disk_pool: &DiskPoolDetermination,
@@ -135,7 +141,7 @@ async fn process(
 
     spinner_init.start("Preparing import");
 
-    let mtls_helper = MtlsCredentialHelper::new()?;
+    let mtls_helper = MtlsCredentialHelper::new().context(HelperCommandSnafu)?;
 
     let path_params = ImportNbdVolumePathParams {
         cluster_id: import_args.target.clone(),
@@ -143,7 +149,7 @@ async fn process(
     };
 
     let req = VolumeNbdImportRequest {
-        csr_base64: mtls_helper.get_csr_base64()?,
+        csr_base64: mtls_helper.get_csr_base64().context(HelperCommandSnafu)?,
         volume_description: Some(description(&source.name_part)),
         volume_size_gb: source.virtual_size_gb_round_up()?,
         volume_storage_class: disk_pool.kube_name.clone(),
@@ -153,7 +159,7 @@ async fn process(
 
     let submit_resp = storage_api.import_nbd_volume(&path_params, &req).await?;
     spinner_init.start("Waiting for volume");
-    //TODO: Poll all the commands to provide more detailed status as import porgresses
+    //TODO: Poll all the commands to provide more detailed status as import progresses
 
     let cmd_api = api_client.command_api();
 
@@ -161,8 +167,14 @@ async fn process(
         .poll_for_credentials(&cmd_api, &submit_resp)
         .await?;
 
-    let nbd_tls_hostname = mtls_helper.read_server_cert_hostname()?;
-    let cert_dir = mtls_helper.write_credentials().await?.to_path_buf();
+    let nbd_tls_hostname = mtls_helper
+        .read_server_cert_hostname()
+        .context(HelperCommandSnafu)?;
+    let cert_dir = mtls_helper
+        .write_credentials()
+        .await
+        .context(HelperCommandSnafu)?
+        .to_path_buf();
 
     spinner_init.start("Waiting for deployment");
 
@@ -184,7 +196,7 @@ async fn process(
     let progress_updater =
         CommandProgressUpdater::build_and_spawn(cmd_api, &submit_resp, "AWAIT_NBD_COMPLETION")?;
 
-    let (progress, mut task) = qemu_img_convert(convert_cmd).await;
+    let (progress, mut task) = qemu_img_convert(qemu_img.clone(), convert_cmd).await;
 
     let mut ui_tick = tokio::time::interval(tokio::time::Duration::from_millis(100));
     let mut backend_tick = tokio::time::interval(tokio::time::Duration::from_millis(5000));
@@ -223,7 +235,7 @@ async fn process(
                         spinner_final.error("Import failed");
                         multi.stop();
 
-                        Err(e.into())
+                        Err(TaskError::HelperCommand { source: e })
                     }
                 };
             }
