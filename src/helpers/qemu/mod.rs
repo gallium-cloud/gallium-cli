@@ -122,13 +122,11 @@ impl QemuImgConvert {
     }
 }
 
-pub async fn qemu_img_convert(
-    qemu_img: QemuImgCmdProvider,
-    args: QemuImgConvert,
-) -> (
-    Arc<QemuConvertProgressProvider>,
-    JoinHandle<Result<Option<Output>, std::io::Error>>,
-) {
+pub struct ConvertTask {
+    pub progress: Arc<QemuConvertProgressProvider>,
+    pub handle: JoinHandle<Result<Option<Output>, std::io::Error>>,
+}
+pub async fn qemu_img_convert(qemu_img: QemuImgCmdProvider, args: QemuImgConvert) -> ConvertTask {
     let convert_progress_provider = Arc::new(QemuConvertProgressProvider::default());
     let convert_progress_provider2 = convert_progress_provider.clone();
     let task_handle = tokio::task::spawn_blocking(move || {
@@ -136,5 +134,8 @@ pub async fn qemu_img_convert(
         report_progress(convert_progress_provider2, reader)
     });
 
-    (convert_progress_provider, task_handle)
+    ConvertTask {
+        progress: convert_progress_provider,
+        handle: task_handle,
+    }
 }

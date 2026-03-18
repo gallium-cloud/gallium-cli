@@ -15,6 +15,8 @@ pub enum TaskError {
     },
     #[snafu(display("Invalid state: {reason}"))]
     InvalidState { reason: &'static str },
+    #[snafu(display("Required parameter missing: {reason}"))]
+    RequiredParameterMissing { reason: &'static str },
     #[snafu(display("Invalid state for {command}: {reason}"))]
     InvalidStateForCommand {
         command: &'static str,

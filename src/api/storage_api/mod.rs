@@ -3,7 +3,8 @@ use crate::api::errors::ApiClientError;
 use crate::api::ApiClient;
 use crate::api::storage_api::entities::{
     CmdSubmitResponse, DiskPoolListResponse, ExportNbdVolumePathParams, ImportNbdVolumePathParams,
-    ListDiskPoolsPathParams, VolumeNbdExportRequest, VolumeNbdImportRequest,
+    ListDiskPoolsPathParams, ListVolumesPathParams, VolumeListResponse, VolumeNbdExportRequest,
+    VolumeNbdImportRequest,
 };
 use derive_more::Constructor;
 use reqwest::Method;
@@ -77,6 +78,27 @@ impl StorageApi {
             .json(request_body)
             .send()
             .await?;
+        self.api_client.deser_response(response).await
+    }
+
+    pub async fn list_volumes(
+        &self,
+        path_params: &ListVolumesPathParams,
+    ) -> Result<VolumeListResponse, ApiClientError> {
+        let response = self
+            .api_client
+            .request_authed(
+                Method::GET,
+                &[
+                    "cluster-api",
+                    &path_params.cluster_id,
+                    "volume",
+                    &path_params.kube_ns,
+                ],
+            )?
+            .send()
+            .await?;
+
         self.api_client.deser_response(response).await
     }
 }

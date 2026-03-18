@@ -6,3 +6,4 @@ pub mod helper_cmd_error;
 pub mod mtls;
 pub mod nbd;
 pub mod qemu;
+pub mod ui;
