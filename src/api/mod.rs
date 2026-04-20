@@ -1,5 +1,7 @@
 use crate::api::common_api::entities::GalliumApiErrorResponse;
-use crate::api::errors::ApiClientError;
+use crate::api::errors::{
+    ApiClientError, DecodeErrorResponseSnafu, DecodeResponseSnafu, ReadResponseBodySnafu,
+};
 
 use crate::api::cluster_vm_api::ClusterVmApi;
 use crate::api::command_v2_api::CommandApi;
@@ -9,6 +11,7 @@ use crate::api::vm_service_api::VmServiceApi;
 use crate::helpers::auth::AccessToken;
 use reqwest::header;
 use serde::de::DeserializeOwned;
+use snafu::ResultExt;
 use std::sync::Arc;
 use url::Url;
 
@@ -107,12 +110,28 @@ impl ApiClient {
             eprintln!("{msg}");
         }
 
-        if response.status().is_success() {
-            Ok(response.json::<T>().await?)
-        } else {
-            Err(ApiClientError::Api {
-                error: response.json::<GalliumApiErrorResponse>().await?,
+        let status = response.status();
+        let url = response.url().clone();
+        let bytes = response.bytes().await.context(ReadResponseBodySnafu {
+            status,
+            url: url.clone(),
+        })?;
+
+        if status.is_success() {
+            serde_json::from_slice::<T>(&bytes).context(DecodeResponseSnafu {
+                status,
+                url,
+                body: truncate_body(&bytes),
             })
+        } else {
+            let error = serde_json::from_slice::<GalliumApiErrorResponse>(&bytes).context(
+                DecodeErrorResponseSnafu {
+                    status,
+                    url: url.clone(),
+                    body: truncate_body(&bytes),
+                },
+            )?;
+            Err(ApiClientError::Api { status, url, error })
         }
     }
 
@@ -135,4 +154,14 @@ impl ApiClient {
     pub fn command_api(self: &Arc<Self>) -> CommandApi {
         CommandApi::new(self.clone())
     }
+}
+
+fn truncate_body(bytes: &[u8]) -> String {
+    const MAX: usize = 2048;
+    let s = String::from_utf8_lossy(bytes);
+    if s.len() <= MAX {
+        return s.into_owned();
+    }
+    let truncated = unicode_ellipsis::truncate_str(&s, MAX);
+    format!("{truncated} ({} bytes total)", bytes.len())
 }
