@@ -1,16 +1,17 @@
 use crate::api::login_api::entities::GalliumLoginRequest;
 use crate::helpers::dotfile::{read_dotfile, write_dotfile};
-use crate::task_common::error::TaskError;
+use crate::task_common::error::{TaskError, UserInputInvalidSnafu};
+use snafu::ResultExt;
 
 pub(crate) async fn login(args: &crate::args::GlobalArguments) -> Result<(), TaskError> {
     let email: String = dialoguer::Input::new()
         .with_prompt("email")
         .interact_text()
-        .map_err(|_| TaskError::UserInputInvalid { field: "email" })?;
+        .context(UserInputInvalidSnafu { field: "email" })?;
     let password: String = dialoguer::Password::new()
         .with_prompt("password")
         .interact()
-        .map_err(|_| TaskError::UserInputInvalid { field: "password" })?;
+        .context(UserInputInvalidSnafu { field: "password" })?;
 
     let mut login_request = GalliumLoginRequest {
         email: email.clone(),
@@ -30,7 +31,7 @@ pub(crate) async fn login(args: &crate::args::GlobalArguments) -> Result<(), Tas
                 .with_prompt("one-time password from your authenticator")
                 .interact_text()
                 .map(Some)
-                .map_err(|_| TaskError::UserInputInvalid { field: "otp" })?;
+                .context(UserInputInvalidSnafu { field: "otp" })?;
         } else {
             login_response = resp;
             break;

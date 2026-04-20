@@ -1,6 +1,6 @@
 use crate::helpers::qemu::qemu_img_cmd_provider::QemuImgCmdProvider;
 use crate::helpers::qemu::qemu_img_info;
-use crate::task_common::error::{HelperCommandSnafu, TaskError};
+use crate::task_common::error::{HelperCommandSnafu, IntegerOverflowSnafu, TaskError};
 use snafu::ResultExt;
 use std::path::{Path, PathBuf};
 use tokio::fs;
@@ -113,8 +113,8 @@ impl ImportSource {
         self.virtual_size_bytes
             .div_ceil(ONE_GB)
             .try_into()
-            .map_err(|_| TaskError::InvalidState {
-                reason: "virtual_size_bytes integer overflow",
+            .context(IntegerOverflowSnafu {
+                field: "virtual_size_bytes",
             })
     }
 }
