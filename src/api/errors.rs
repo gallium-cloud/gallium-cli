@@ -3,6 +3,13 @@ use reqwest::StatusCode;
 use snafu::prelude::*;
 use url::Url;
 
+#[derive(Debug)]
+pub struct ResponseContext {
+    pub status: StatusCode,
+    pub url: Url,
+    pub body: String,
+}
+
 #[derive(Debug, Snafu)]
 #[snafu(visibility(pub(crate)))]
 pub enum ApiClientError {
@@ -10,26 +17,28 @@ pub enum ApiClientError {
     Api {
         status: StatusCode,
         url: Url,
-        error: GalliumApiErrorResponse,
+        error: Box<GalliumApiErrorResponse>,
     },
-    #[snafu(display("Failed to decode response body ({status}) from {url}. Body: {body}"))]
+    #[snafu(display(
+        "Failed to decode response body ({}) from {}. Body: {}",
+        ctx.status, ctx.url, ctx.body
+    ))]
     DecodeResponse {
-        status: StatusCode,
-        url: Url,
-        body: String,
+        ctx: Box<ResponseContext>,
         source: serde_json::Error,
     },
-    #[snafu(display("Failed to decode error response ({status}) from {url}. Body: {body}"))]
+    #[snafu(display(
+        "Failed to decode error response ({}) from {}. Body: {}",
+        ctx.status, ctx.url, ctx.body
+    ))]
     DecodeErrorResponse {
-        status: StatusCode,
-        url: Url,
-        body: String,
+        ctx: Box<ResponseContext>,
         source: serde_json::Error,
     },
     #[snafu(display("Failed to read response body ({status}) from {url}"))]
     ReadResponseBody {
         status: StatusCode,
-        url: Url,
+        url: Box<Url>,
         source: reqwest::Error,
     },
     #[snafu(transparent)]

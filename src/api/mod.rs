@@ -1,6 +1,7 @@
 use crate::api::common_api::entities::GalliumApiErrorResponse;
 use crate::api::errors::{
     ApiClientError, DecodeErrorResponseSnafu, DecodeResponseSnafu, ReadResponseBodySnafu,
+    ResponseContext,
 };
 
 use crate::api::cluster_vm_api::ClusterVmApi;
@@ -114,24 +115,32 @@ impl ApiClient {
         let url = response.url().clone();
         let bytes = response.bytes().await.context(ReadResponseBodySnafu {
             status,
-            url: url.clone(),
+            url: Box::new(url.clone()),
         })?;
 
         if status.is_success() {
             serde_json::from_slice::<T>(&bytes).context(DecodeResponseSnafu {
-                status,
-                url,
-                body: truncate_body(&bytes),
+                ctx: Box::new(ResponseContext {
+                    status,
+                    url,
+                    body: truncate_body(&bytes),
+                }),
             })
         } else {
             let error = serde_json::from_slice::<GalliumApiErrorResponse>(&bytes).context(
                 DecodeErrorResponseSnafu {
-                    status,
-                    url: url.clone(),
-                    body: truncate_body(&bytes),
+                    ctx: Box::new(ResponseContext {
+                        status,
+                        url: url.clone(),
+                        body: truncate_body(&bytes),
+                    }),
                 },
             )?;
-            Err(ApiClientError::Api { status, url, error })
+            Err(ApiClientError::Api {
+                status,
+                url,
+                error: Box::new(error),
+            })
         }
     }
 
