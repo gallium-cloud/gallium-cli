@@ -11,6 +11,9 @@ jobs:
         include:
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+            build-tool: cross
           - target: universal-apple-darwin
             os: macos-latest
           - target: x86_64-pc-windows-msvc
@@ -24,4 +27,4 @@ jobs:
           target: ${{ matrix.target }}
           token: ${{ secrets.GITHUB_TOKEN }}
           checksum: sha256
-          build-tool: cargo
+          build-tool: ${{ matrix.build-tool || 'cargo' }}
