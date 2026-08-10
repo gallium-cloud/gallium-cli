@@ -1,12 +1,21 @@
 use crate::api::errors::ApiClientError;
 use crate::helpers::helper_cmd_error::HelperCommandError;
 use snafu::prelude::*;
+use std::path::PathBuf;
 
 #[derive(Debug, Snafu)]
 #[snafu(visibility(pub))]
 pub enum TaskError {
-    #[snafu(display("Missing or invalid input for {field}"))]
-    UserInputInvalid { field: &'static str },
+    #[snafu(display("Failed to read input for {field}"))]
+    UserInputInvalid {
+        field: &'static str,
+        source: dialoguer::Error,
+    },
+    #[snafu(display("Integer overflow computing {field}"))]
+    IntegerOverflow {
+        field: &'static str,
+        source: std::num::TryFromIntError,
+    },
     #[snafu(display("Value '{val}' for {field} invalid: {reason}"))]
     UserInputInvalidValueReason {
         val: String,
@@ -37,6 +46,17 @@ pub enum TaskError {
     },
     #[snafu(display("Helper command error"))]
     HelperCommand { source: HelperCommandError },
+    #[snafu(display("Filesystem error ({op}) at {}", path.display()))]
+    Filesystem {
+        op: &'static str,
+        path: PathBuf,
+        source: std::io::Error,
+    },
+    #[snafu(display("Background task '{task}' panicked"))]
+    BackgroundTaskPanicked {
+        task: &'static str,
+        source: tokio::task::JoinError,
+    },
     #[snafu(display("Failed to initialize {name}"))]
     Initialize {
         name: &'static str,
