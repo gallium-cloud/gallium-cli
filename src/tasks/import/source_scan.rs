@@ -1,6 +1,8 @@
 use crate::helpers::qemu::qemu_img_cmd_provider::QemuImgCmdProvider;
 use crate::helpers::qemu::qemu_img_info;
-use crate::task_common::error::{HelperCommandSnafu, TaskError};
+use crate::task_common::error::{
+    FilesystemSnafu, HelperCommandSnafu, IntegerOverflowSnafu, TaskError,
+};
 use snafu::ResultExt;
 use std::path::{Path, PathBuf};
 use tokio::fs;
@@ -20,9 +22,10 @@ pub async fn scan_import_sources(
     qemu_img: &QemuImgCmdProvider,
     source: &Path,
 ) -> Result<ScanResult, TaskError> {
-    let source_metadata = fs::metadata(source)
-        .await
-        .whatever_context::<_, TaskError>("Query filesystem metadata")?;
+    let source_metadata = fs::metadata(source).await.context(FilesystemSnafu {
+        op: "query metadata",
+        path: source.to_path_buf(),
+    })?;
 
     if source_metadata.is_dir() {
         scan_directory(qemu_img, source).await
@@ -51,17 +54,17 @@ async fn scan_directory(
     qemu_img: &QemuImgCmdProvider,
     dir: &Path,
 ) -> Result<ScanResult, TaskError> {
-    let mut entries = fs::read_dir(dir)
-        .await
-        .whatever_context::<_, TaskError>("Read source directory")?;
+    let mut entries = fs::read_dir(dir).await.context(FilesystemSnafu {
+        op: "read directory",
+        path: dir.to_path_buf(),
+    })?;
 
     let mut sources = vec![];
     let mut warnings = vec![];
-    while let Some(entry) = entries
-        .next_entry()
-        .await
-        .whatever_context::<_, TaskError>("Read directory entry")?
-    {
+    while let Some(entry) = entries.next_entry().await.context(FilesystemSnafu {
+        op: "read directory entry",
+        path: dir.to_path_buf(),
+    })? {
         let path = entry.path();
         let is_supported = path
             .extension()
@@ -113,8 +116,8 @@ impl ImportSource {
         self.virtual_size_bytes
             .div_ceil(ONE_GB)
             .try_into()
-            .map_err(|_| TaskError::InvalidState {
-                reason: "virtual_size_bytes integer overflow",
+            .context(IntegerOverflowSnafu {
+                field: "virtual_size_bytes",
             })
     }
 }

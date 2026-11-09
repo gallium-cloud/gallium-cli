@@ -1,4 +1,4 @@
-use crate::task_common::error::TaskError;
+use crate::task_common::error::{BackgroundTaskPanickedSnafu, TaskError};
 use futures_util::{SinkExt, StreamExt};
 use snafu::prelude::*;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -44,12 +44,12 @@ pub(crate) async fn proxy(args: &ProxyArguments) -> Result<(), TaskError> {
     tokio::select! {
         result = i => {
             result
-                .whatever_context::<_, TaskError>("stdin proxy task panicked")?
+                .context(BackgroundTaskPanickedSnafu { task: "stdin proxy" })?
                 .whatever_context::<_, TaskError>("writing to websocket")?;
         }
         result = o => {
             result
-                .whatever_context::<_, TaskError>("stdout proxy task panicked")?
+                .context(BackgroundTaskPanickedSnafu { task: "stdout proxy" })?
                 .whatever_context::<_, TaskError>("writing to stdout")?;
         }
     };
