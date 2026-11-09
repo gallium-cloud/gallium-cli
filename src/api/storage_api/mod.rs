@@ -13,6 +13,7 @@ use std::sync::Arc;
 pub mod entities;
 
 #[derive(Constructor)]
+#[allow(clippy::redundant_field_names)]
 pub struct StorageApi {
     api_client: Arc<ApiClient>,
 }

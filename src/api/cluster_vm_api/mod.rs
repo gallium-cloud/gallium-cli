@@ -10,6 +10,7 @@ use std::sync::Arc;
 #[allow(unused)]
 pub mod entities;
 #[derive(Constructor)]
+#[allow(clippy::redundant_field_names)]
 pub struct ClusterVmApi {
     api_client: Arc<ApiClient>,
 }

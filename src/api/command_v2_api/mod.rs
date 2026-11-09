@@ -12,6 +12,7 @@ use std::sync::Arc;
 #[allow(unused, clippy::upper_case_acronyms)]
 pub mod entities;
 #[derive(Constructor, Clone)]
+#[allow(clippy::redundant_field_names)]
 pub struct CommandApi {
     api_client: Arc<ApiClient>,
 }

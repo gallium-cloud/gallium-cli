@@ -9,6 +9,7 @@ use std::sync::Arc;
 pub mod entities;
 
 #[derive(Constructor)]
+#[allow(clippy::redundant_field_names)]
 pub struct VmServiceApi {
     api_client: Arc<ApiClient>,
 }

@@ -11,6 +11,7 @@ use reqwest::Method;
 use std::sync::Arc;
 
 #[derive(Constructor)]
+#[allow(clippy::redundant_field_names)]
 pub struct LoginApi {
     api_client: Arc<ApiClient>,
 }
