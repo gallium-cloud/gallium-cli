@@ -1,8 +1,8 @@
-use crate::api::vm_service_api::entities::GetWsUrlForVmServiceQueryParams;
 use crate::helpers::auth::get_login_response_for_saved_credentials;
 
 use crate::helpers::env::current_exe;
 use crate::task_common::error::TaskError;
+use gallium_api_client::apis::virtual_machine_api;
 use snafu::prelude::*;
 
 #[derive(clap::Parser)]
@@ -22,20 +22,14 @@ pub(crate) async fn ssh(
         None => args.destination.as_str(),
     };
 
-    let vm_service_api = gargs
-        .build_api_client()?
-        .with_access_token(
-            get_login_response_for_saved_credentials(gargs)
-                .await?
-                .try_into()?,
-        )
-        .vm_service_api();
+    let api_client = gargs.build_api_client()?.with_access_token(
+        get_login_response_for_saved_credentials(gargs)
+            .await?
+            .try_into()?,
+    );
 
-    let ws_url = vm_service_api
-        .get_ws_url_for_vm_service(&GetWsUrlForVmServiceQueryParams {
-            host: host.to_string(),
-            port: "22".into(),
-        })
+    let port = "22";
+    let ws_url = virtual_machine_api::get_ws_url_for_vm_service(api_client.config(), port, host)
         .await?
         .url
         .ok_or_else(|| TaskError::ApiResponseMissingField { field: "ws:URL" })?;

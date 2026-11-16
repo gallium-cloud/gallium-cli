@@ -1,8 +1,7 @@
-use crate::api::command_v2_api::CommandApi;
-use crate::api::storage_api::entities::CmdSubmitResponse;
-
+use crate::api::ApiClient;
 use crate::helpers::cmd::cmd_response::poll_for_cmd_response_type;
 use crate::task_common::error::TaskError;
+use gallium_api_client::models::CmdSubmitResponse;
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
@@ -15,8 +14,8 @@ pub struct NbdServerStartCmdResponse {
 const NBD_SERVER_START_CMD_TYPE: &str = "NBD_SERVER_START";
 
 pub async fn poll_for_nbd_response(
-    cmd_api: &CommandApi,
+    api_client: &ApiClient,
     cmd_submit: &CmdSubmitResponse,
 ) -> Result<NbdServerStartCmdResponse, TaskError> {
-    poll_for_cmd_response_type(cmd_api, cmd_submit, NBD_SERVER_START_CMD_TYPE).await
+    poll_for_cmd_response_type(api_client, cmd_submit, NBD_SERVER_START_CMD_TYPE).await
 }

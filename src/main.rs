@@ -33,7 +33,7 @@ async fn main() -> Result<(), TaskError> {
             //TODO: on windows, double-clicking the EXE from the file browser will result in a console window that immediately closes
             match get_login_response_for_saved_credentials(&invocation.gargs).await {
                 Ok(login_resp) => {
-                    if let Some(org) = login_resp.org {
+                    if let Some(org) = login_resp.org.flatten() {
                         println!("Logged in to Gallium org: {}", org.name);
                     }
                     if let Some(avail_orgs) = login_resp.available_orgs

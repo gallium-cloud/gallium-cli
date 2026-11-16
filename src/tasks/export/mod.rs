@@ -2,8 +2,7 @@ mod format;
 mod ui_confirm;
 mod volume_scan;
 
-use crate::api::ApiClient;
-use crate::api::storage_api::entities::{ExportNbdVolumePathParams, VolumeNbdExportRequest};
+use crate::api::{ApiClient, path_param};
 use crate::args::GlobalArguments;
 use crate::helpers::auth::get_login_response_for_saved_credentials;
 use crate::helpers::cmd::cmd_progress::CommandProgressUpdater;
@@ -19,6 +18,8 @@ use crate::tasks::export::format::ExportFormat;
 use crate::tasks::export::ui_confirm::confirm_export;
 use crate::tasks::export::volume_scan::{ScannedVolume, scan_volumes_for_export};
 use crate::tasks_internal::qemu_img::ensure_qemu_img;
+use gallium_api_client::apis::cluster_volume_api;
+use gallium_api_client::models::VolumeNbdExportRequest;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -73,8 +74,6 @@ async fn process(
 ) -> Result<(), TaskError> {
     let qemu_img = ensure_qemu_img().await.context(HelperCommandSnafu)?;
 
-    let storage_api = api_client.storage_api();
-
     let export_filename = format!("{}_export{}", volume.kube_name, exp_format.as_ext());
 
     let export_file: PathBuf;
@@ -95,22 +94,21 @@ async fn process(
 
     let mtls_helper = MtlsCredentialHelper::new().context(HelperCommandSnafu)?;
 
-    let path_params = ExportNbdVolumePathParams {
-        cluster_id: source,
-        kube_name: volume.kube_name,
-        kube_ns: "default".to_string(),
-    };
-
     let req = VolumeNbdExportRequest {
         csr_base64: mtls_helper.get_csr_base64().context(HelperCommandSnafu)?,
     };
 
-    let submit_resp = storage_api.export_nbd_volume(&path_params, &req).await?;
-
-    let cmd_api = api_client.command_api();
+    let submit_resp = cluster_volume_api::export_nbd_volume(
+        api_client.config(),
+        path_param(&source)?,
+        "default",
+        path_param(&volume.kube_name)?,
+        req,
+    )
+    .await?;
 
     let mtls_helper = mtls_helper
-        .poll_for_credentials(&cmd_api, &submit_resp)
+        .poll_for_credentials(api_client, &submit_resp)
         .await?;
 
     let nbd_tls_hostname = mtls_helper
@@ -124,7 +122,7 @@ async fn process(
 
     ui.spinner_init.start("Waiting for deployment");
 
-    let nbd = poll_for_nbd_response(&cmd_api, &submit_resp).await?;
+    let nbd = poll_for_nbd_response(api_client, &submit_resp).await?;
 
     ui.spinner_init.stop("Deployment waiting for connection");
 
@@ -139,8 +137,11 @@ async fn process(
         },
     };
 
-    let progress_updater =
-        CommandProgressUpdater::build_and_spawn(cmd_api, &submit_resp, "AWAIT_NBD_COMPLETION")?;
+    let progress_updater = CommandProgressUpdater::build_and_spawn(
+        api_client.clone(),
+        &submit_resp,
+        "AWAIT_NBD_COMPLETION",
+    )?;
 
     let convert_task = qemu_img_convert(qemu_img.clone(), convert_cmd).await;
     transfer_progress_ui(convert_task, progress_updater, ui).await

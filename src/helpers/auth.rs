@@ -1,7 +1,8 @@
-use crate::api::login_api::entities::{GalliumLoginResponse, GalliumTokenRequest};
 use crate::args::GlobalArguments;
 use crate::helpers::dotfile::read_dotfile;
 use crate::task_common::error::TaskError;
+use gallium_api_client::apis::user_api;
+use gallium_api_client::models::{GalliumLoginResponse, GalliumTokenRequest};
 use snafu::prelude::*;
 
 pub struct AccessToken(pub String);
@@ -16,14 +17,16 @@ pub async fn get_login_response_for_saved_credentials(
         .whatever_context::<_, TaskError>("no refresh token available")?
         .clone();
 
-    let login_api = global_args.build_api_client()?.login_api();
+    let api_client = global_args.build_api_client()?;
 
-    Ok(login_api
-        .refresh_access_token(&GalliumTokenRequest {
+    Ok(user_api::refresh_access_token(
+        api_client.config(),
+        GalliumTokenRequest {
             refresh_token,
-            org_slug: global_args.gallium_org.clone(),
-        })
-        .await?)
+            org_slug: global_args.gallium_org.clone().map(Some),
+        },
+    )
+    .await?)
 }
 
 impl TryFrom<GalliumLoginResponse> for AccessToken {

@@ -1,8 +1,8 @@
-use crate::api::ApiClient;
-use crate::api::cluster_vm_api::entities::{ListVirtualMachinesPathParams, VirtualMachine};
-use crate::api::storage_api::entities::{ListVolumesPathParams, Volume};
+use crate::api::{ApiClient, path_param};
 use crate::task_common::error::TaskError;
 use crate::tasks::export::ExportArguments;
+use gallium_api_client::apis::{cluster_virtual_machine_api, cluster_volume_api};
+use gallium_api_client::models::{VirtualMachine, Volume};
 use std::collections::HashSet;
 use std::sync::Arc;
 
@@ -28,23 +28,19 @@ pub async fn scan_volumes_for_export(
             reason: "Cannot specify both VMs and volumes in one export command.",
         });
     }
-    let storage_api = api_client.storage_api();
-    let volume_list = storage_api
-        .list_volumes(&ListVolumesPathParams {
-            cluster_id: args.source.clone(),
-            kube_ns: "default".into(),
-        })
-        .await?
-        .volumes;
+    let cluster_id = path_param(&args.source)?;
+    let volume_list =
+        cluster_volume_api::list_volumes(api_client.config(), cluster_id, "default", None)
+            .await?
+            .volumes;
 
-    let vm_api = api_client.cluster_vm_api();
-    let vm_list = vm_api
-        .list_virtual_machines(&ListVirtualMachinesPathParams {
-            cluster_id: args.source.clone(),
-            kube_ns: "default".into(),
-        })
-        .await?
-        .items;
+    let vm_list = cluster_virtual_machine_api::list_virtual_machines(
+        api_client.config(),
+        cluster_id,
+        "default",
+    )
+    .await?
+    .items;
 
     let mut scanned_volumes = vec![];
 
@@ -71,7 +67,7 @@ pub async fn scan_volumes_for_export(
                 vm_name: Some(vm.kube_name.clone()),
                 kube_name: vol.kube_name.clone(),
                 size_bytes: vol.size_bytes,
-                used_size_bytes: vol.used_size_bytes,
+                used_size_bytes: vol.used_size_bytes.flatten(),
             });
         }
     }
@@ -90,7 +86,7 @@ pub async fn scan_volumes_for_export(
                 vm_name: None,
                 kube_name: vol.kube_name.clone(),
                 size_bytes: vol.size_bytes,
-                used_size_bytes: vol.used_size_bytes,
+                used_size_bytes: vol.used_size_bytes.flatten(),
             });
         }
     }
@@ -107,7 +103,7 @@ fn match_vm_arg<'a>(
     for vm in vm_list.iter() {
         if vm.kube_name.as_str() == vm_arg {
             return Ok(vm);
-        } else if vm.name.as_deref() == Some(vm_arg) {
+        } else if vm.name.as_ref().and_then(|name| name.as_deref()) == Some(vm_arg) {
             matched_vm = Some(vm);
             matched_count += 1;
         }
@@ -139,7 +135,7 @@ fn match_vol_arg<'a>(vol_arg: &str, vol_list: &'a [Volume]) -> Result<&'a Volume
     for vol in vol_list.iter() {
         if vol.kube_name.as_str() == vol_arg {
             return Ok(vol);
-        } else if vol.name.as_deref() == Some(vol_arg) {
+        } else if vol.name.as_ref().and_then(|name| name.as_deref()) == Some(vol_arg) {
             matched_vol = Some(vol);
             matched_count += 1;
         }

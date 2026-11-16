@@ -5,8 +5,7 @@ mod source_scan;
 use crate::task_common::error::TaskError;
 use crate::tasks::import::source_scan::{ImportSource, ScanResult, scan_import_sources};
 
-use crate::api::ApiClient;
-use crate::api::storage_api::entities::{ImportNbdVolumePathParams, VolumeNbdImportRequest};
+use crate::api::{ApiClient, path_param};
 use crate::helpers::auth::get_login_response_for_saved_credentials;
 use crate::helpers::cmd::cmd_progress::CommandProgressUpdater;
 use crate::helpers::mtls::MtlsCredentialHelper;
@@ -19,6 +18,8 @@ use crate::tasks::import::disk_pool::{DiskPoolDetermination, determine_disk_pool
 use crate::tasks::import::param_helpers::{description, truncate_name};
 use crate::tasks_internal::qemu_img::ensure_qemu_img;
 use cliclack::{confirm, log};
+use gallium_api_client::apis::cluster_volume_api;
+use gallium_api_client::models::VolumeNbdImportRequest;
 use humansize::{BINARY, format_size};
 use snafu::ResultExt;
 use std::path::PathBuf;
@@ -56,8 +57,7 @@ pub(crate) async fn import_main(
             .try_into()?,
     );
 
-    let storage_api = api_client.storage_api();
-    let disk_pool = determine_disk_pool(&storage_api, &args).await?;
+    let disk_pool = determine_disk_pool(&api_client, &args).await?;
 
     let mut import_sources = vec![];
     for source in args.source.iter() {
@@ -133,35 +133,32 @@ async fn process(
     disk_pool: &DiskPoolDetermination,
     source: ImportSource,
 ) -> Result<(), TaskError> {
-    let storage_api = api_client.storage_api();
-
     let ui = TransferProgressUi::init(format!("Importing {}", source.name_part));
     ui.spinner_init.start("Preparing import");
 
     let mtls_helper = MtlsCredentialHelper::new().context(HelperCommandSnafu)?;
 
-    let path_params = ImportNbdVolumePathParams {
-        cluster_id: import_args.target.clone(),
-        kube_ns: "default".into(),
-    };
-
     let req = VolumeNbdImportRequest {
         csr_base64: mtls_helper.get_csr_base64().context(HelperCommandSnafu)?,
-        volume_description: Some(description(&source.name_part)),
+        volume_description: Some(Some(description(&source.name_part))),
         volume_size_gb: source.virtual_size_gb_round_up()?,
         volume_storage_class: disk_pool.kube_name.clone(),
-        volume_name: Some(truncate_name(&source.name_part)),
-        import_source_file_name: Some(source.name_part.clone()),
+        volume_name: Some(Some(truncate_name(&source.name_part))),
+        import_source_file_name: Some(Some(source.name_part.clone())),
     };
 
-    let submit_resp = storage_api.import_nbd_volume(&path_params, &req).await?;
+    let submit_resp = cluster_volume_api::import_nbd_volume(
+        api_client.config(),
+        path_param(&import_args.target)?,
+        "default",
+        req,
+    )
+    .await?;
     ui.spinner_init.start("Waiting for volume");
     //TODO: Poll all the commands to provide more detailed status as import progresses
 
-    let cmd_api = api_client.command_api();
-
     let mtls_helper = mtls_helper
-        .poll_for_credentials(&cmd_api, &submit_resp)
+        .poll_for_credentials(&api_client, &submit_resp)
         .await?;
 
     let nbd_tls_hostname = mtls_helper
@@ -175,7 +172,7 @@ async fn process(
 
     ui.spinner_init.start("Waiting for deployment");
 
-    let nbd = poll_for_nbd_response(&cmd_api, &submit_resp).await?;
+    let nbd = poll_for_nbd_response(&api_client, &submit_resp).await?;
 
     ui.spinner_init.stop("Deployment ready to receive import");
 
@@ -191,7 +188,7 @@ async fn process(
     };
 
     let progress_updater =
-        CommandProgressUpdater::build_and_spawn(cmd_api, &submit_resp, "AWAIT_NBD_COMPLETION")?;
+        CommandProgressUpdater::build_and_spawn(api_client, &submit_resp, "AWAIT_NBD_COMPLETION")?;
 
     let convert_task = qemu_img_convert(qemu_img.clone(), convert_cmd).await;
 

@@ -53,11 +53,16 @@ impl GlobalArguments {
     }
 
     pub fn build_api_client(&self) -> Result<Arc<ApiClient>, TaskError> {
-        Ok(ApiClient::new(self.get_api_url().try_into().map_err(
-            |e: url::ParseError| TaskError::Initialize {
-                name: "api client",
-                source: Box::new(e),
-            },
-        )?))
+        let api_url =
+            self.get_api_url()
+                .parse()
+                .map_err(|e: url::ParseError| TaskError::Initialize {
+                    name: "api client",
+                    source: Box::new(e),
+                })?;
+        ApiClient::new(&api_url).map_err(|e| TaskError::Initialize {
+            name: "api client",
+            source: Box::new(e),
+        })
     }
 }
