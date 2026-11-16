@@ -1,7 +1,8 @@
 [workspace]
 
 members = [
-    "libs/qemu_img_cmd_types"
+    "libs/gallium_api_client",
+    "libs/qemu_img_cmd_types",
 ]
 
 [package]
