@@ -21,6 +21,9 @@ pub struct GlobalArguments {
     /// Optionally specify the org slug of the organisation containing the instance you wish to connect to.
     #[arg(short, long, default_missing_value= Option::None)]
     pub gallium_org: Option<String>,
+
+    #[clap(long, hide = true, default_value_t = 120)]
+    pub token_expiry_margin_seconds: i64,
 }
 
 #[derive(clap::Subcommand)]

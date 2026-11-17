@@ -30,6 +30,7 @@ hex-literal = "1.1.0"
 home = { version = "0.5.12" }
 http = "1"
 humansize = "2"
+jwt-compact = { version = "0.8.0" }
 pem = "4"
 qemu_img_cmd_types = { path = "libs/qemu_img_cmd_types" }
 rcgen = { version = "0.14", features = ["crypto","ring", "x509-parser"] }
@@ -60,5 +61,5 @@ panic = "deny"
 unwrap_used = "deny"
 expect_used = "deny"
 
-# temporarily allow until derive_more is patched for rust 1.100 
+# temporarily allow until derive_more is patched for rust 1.100
 redundant_field_names = "allow"
