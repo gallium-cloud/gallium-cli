@@ -1,42 +1,20 @@
+mod args;
+mod password;
+
 use crate::helpers::dotfile::{read_dotfile, write_dotfile};
-use crate::task_common::error::{TaskError, UserInputInvalidSnafu};
-use gallium_api_client::apis::user_api;
-use gallium_api_client::models::GalliumLoginRequest;
-use snafu::ResultExt;
+use crate::task_common::error::TaskError;
 
-pub(crate) async fn login(args: &crate::args::GlobalArguments) -> Result<(), TaskError> {
-    let email: String = dialoguer::Input::new()
-        .with_prompt("email")
-        .interact_text()
-        .context(UserInputInvalidSnafu { field: "email" })?;
-    let password: String = dialoguer::Password::new()
-        .with_prompt("password")
-        .interact()
-        .context(UserInputInvalidSnafu { field: "password" })?;
+use crate::tasks::login::args::LoginMethod;
+use crate::tasks::login::password::password_login;
+pub use args::LoginArguments;
 
-    let mut login_request = GalliumLoginRequest {
-        email: email.clone(),
-        password: password.clone(),
-        otp: None,
+pub(crate) async fn login(
+    global_args: &crate::args::GlobalArguments,
+    args: LoginArguments,
+) -> Result<(), TaskError> {
+    let login_response = match args.method {
+        LoginMethod::Password => password_login(global_args).await?,
     };
-
-    let api_client = args.build_unauthed_api_client()?;
-
-    let login_response;
-
-    loop {
-        let resp = user_api::login(api_client.config(), login_request.clone()).await?;
-        if resp.mfa_required {
-            let otp = dialoguer::Input::new()
-                .with_prompt("one-time password from your authenticator")
-                .interact_text()
-                .context(UserInputInvalidSnafu { field: "otp" })?;
-            login_request.otp = Some(Some(otp));
-        } else {
-            login_response = resp;
-            break;
-        }
-    }
 
     let refresh_token = login_response.refresh_token.flatten().ok_or_else(|| {
         TaskError::ApiResponseMissingField {
@@ -45,12 +23,14 @@ pub(crate) async fn login(args: &crate::args::GlobalArguments) -> Result<(), Tas
     })?;
 
     let mut dotfile = read_dotfile().await?;
-
     dotfile
         .refresh_tokens
-        .insert(args.get_api_url().to_string(), refresh_token);
-
+        .insert(global_args.get_api_url().to_string(), refresh_token);
     write_dotfile(&dotfile).await?;
 
+    match login_response.org.flatten() {
+        Some(org) => println!("Logged in to Gallium org: {}", org.name),
+        None => println!("Logged in."),
+    }
     Ok(())
 }
