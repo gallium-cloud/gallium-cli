@@ -14,4 +14,8 @@ pub struct LoginArguments {
     /// How the CLI should log you in
     #[arg(long, default_value = "browser")]
     pub method: LoginMethod,
+
+    /// Don't open the browser automatically
+    #[arg(long)]
+    pub no_auto_open: bool,
 }

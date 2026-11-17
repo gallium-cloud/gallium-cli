@@ -1,6 +1,7 @@
 use crate::args::GlobalArguments;
 use crate::helpers::loopback::LoopbackListener;
 use crate::task_common::error::TaskError;
+use crate::tasks::login::LoginArguments;
 use gallium_api_client::apis::user_api;
 use gallium_api_client::models::{CliTokenRequest, GalliumLoginResponse};
 use oauth2::{CsrfToken, PkceCodeChallenge};
@@ -11,24 +12,29 @@ use url::Url;
 
 const CODE_TIMEOUT: Duration = Duration::from_secs(5 * 60);
 
-pub async fn browser_login(args: &GlobalArguments) -> Result<GalliumLoginResponse, TaskError> {
+pub async fn browser_login(
+    global_args: &GlobalArguments,
+    login_args: &LoginArguments,
+) -> Result<GalliumLoginResponse, TaskError> {
     let (challenge, verifier) = PkceCodeChallenge::new_random_sha256();
     let state = CsrfToken::new_random();
     let listener = LoopbackListener::bind().await?;
     let hostname = gethostname::gethostname().to_string_lossy().into_owned();
     let authorize_url = build_authorize_url(
-        args.get_console_url(),
+        global_args.get_console_url(),
         challenge.as_str(),
         &listener.redirect_uri(),
         state.secret(),
         &hostname,
     )?;
-    let done_url = format!("{}/cli/done", args.get_console_url());
+    let done_url = format!("{}/cli/done", global_args.get_console_url());
 
-    if open::that_detached(authorize_url.as_str()).is_ok() {
-        println!("Browser didn't open? Use the URL below to complete authentication.");
-    } else {
-        eprintln!("Failed to open browser - use the URL below to complete authentication.");
+    if !login_args.no_auto_open {
+        if open::that_detached(authorize_url.as_str()).is_ok() {
+            println!("Browser didn't open? Use the URL below to complete authentication.");
+        } else {
+            eprintln!("Failed to open browser - use the URL below to complete authentication.");
+        }
     }
 
     println!("URL: {authorize_url}");
@@ -45,7 +51,7 @@ pub async fn browser_login(args: &GlobalArguments) -> Result<GalliumLoginRespons
     };
 
     Ok(user_api::cli_token(
-        args.build_unauthed_api_client()?.config(),
+        global_args.build_unauthed_api_client()?.config(),
         CliTokenRequest {
             code,
             code_verifier: verifier.into_secret(),

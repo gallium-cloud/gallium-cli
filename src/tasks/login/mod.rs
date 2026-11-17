@@ -15,7 +15,7 @@ pub(crate) async fn login(
     args: LoginArguments,
 ) -> Result<(), TaskError> {
     let login_response = match args.method {
-        LoginMethod::Browser => browser_login(global_args).await?,
+        LoginMethod::Browser => browser_login(global_args, &args).await?,
         LoginMethod::Password => password_login(global_args).await?,
     };
 
