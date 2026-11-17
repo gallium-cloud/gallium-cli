@@ -8,23 +8,31 @@ use snafu::prelude::*;
 pub enum ApiClientError {
     #[snafu(display("API error {status}: {body}"))]
     Api { status: StatusCode, body: String },
+
     #[snafu(display("Failed to decode response body"))]
     DecodeResponse { source: serde_json::Error },
+
     #[snafu(display("Failed to read response body"))]
     ReadResponseBody { source: std::io::Error },
+
     #[snafu(transparent)]
     Request { source: reqwest::Error },
+
     #[snafu(transparent)]
     Middleware { source: reqwest_middleware::Error },
+
     #[snafu(display("Invalid path segment: {val}"))]
     InvalidPathSegmentParameter { val: String },
+
     #[snafu(display(
         "Login session expired or revoked. Run `{} login` again.",
         clap::crate_name!()
     ))]
     SessionExpired,
+
     #[snafu(display("API response missing expected field: {field}"))]
     ResponseMissingField { field: &'static str },
+
     #[snafu(display("API Client Internal Error: {reason}"))]
     InternalError { reason: &'static str },
 }
