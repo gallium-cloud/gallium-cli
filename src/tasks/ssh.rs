@@ -1,5 +1,3 @@
-use crate::helpers::auth::get_login_response_for_saved_credentials;
-
 use crate::helpers::env::current_exe;
 use crate::task_common::error::TaskError;
 use gallium_api_client::apis::virtual_machine_api;
@@ -22,11 +20,7 @@ pub(crate) async fn ssh(
         None => args.destination.as_str(),
     };
 
-    let api_client = gargs.build_api_client()?.with_access_token(
-        get_login_response_for_saved_credentials(gargs)
-            .await?
-            .try_into()?,
-    );
+    let api_client = gargs.build_authed_api_client().await?;
 
     let port = "22";
     let ws_url = virtual_machine_api::get_ws_url_for_vm_service(api_client.config(), port, host)

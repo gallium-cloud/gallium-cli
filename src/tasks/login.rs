@@ -20,7 +20,7 @@ pub(crate) async fn login(args: &crate::args::GlobalArguments) -> Result<(), Tas
         otp: None,
     };
 
-    let api_client = args.build_api_client()?;
+    let api_client = args.build_unauthed_api_client()?;
 
     let login_response;
 

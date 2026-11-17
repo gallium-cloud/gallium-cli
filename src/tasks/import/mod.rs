@@ -6,7 +6,6 @@ use crate::task_common::error::TaskError;
 use crate::tasks::import::source_scan::{ImportSource, ScanResult, scan_import_sources};
 
 use crate::api::{ApiClient, path_param};
-use crate::helpers::auth::get_login_response_for_saved_credentials;
 use crate::helpers::cmd::cmd_progress::CommandProgressUpdater;
 use crate::helpers::mtls::MtlsCredentialHelper;
 use crate::helpers::nbd::poll_for_nbd_response;
@@ -51,11 +50,7 @@ pub(crate) async fn import_main(
 ) -> Result<(), TaskError> {
     let qemu_img = ensure_qemu_img().await.context(HelperCommandSnafu)?;
 
-    let api_client = global_args.build_api_client()?.with_access_token(
-        get_login_response_for_saved_credentials(global_args)
-            .await?
-            .try_into()?,
-    );
+    let api_client = global_args.build_authed_api_client().await?;
 
     let disk_pool = determine_disk_pool(&api_client, &args).await?;
 

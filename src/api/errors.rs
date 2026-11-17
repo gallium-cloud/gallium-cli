@@ -18,12 +18,26 @@ pub enum ApiClientError {
     Middleware { source: reqwest_middleware::Error },
     #[snafu(display("Invalid path segment: {val}"))]
     InvalidPathSegmentParameter { val: String },
+    #[snafu(display(
+        "Login session expired or revoked. Run `{} login` again.",
+        clap::crate_name!()
+    ))]
+    SessionExpired,
+    #[snafu(display("API response missing expected field: {field}"))]
+    ResponseMissingField { field: &'static str },
+    #[snafu(display("API Client Internal Error: {reason}"))]
+    InternalError { reason: &'static str },
 }
 
 impl<T> From<GeneratedError<T>> for ApiClientError {
     fn from(error: GeneratedError<T>) -> Self {
         match error {
             GeneratedError::Reqwest(source) => Self::Request { source },
+            GeneratedError::ReqwestMiddleware(reqwest_middleware::Error::Middleware(e)) => e
+                .downcast::<ApiClientError>()
+                .unwrap_or_else(|e| Self::Middleware {
+                    source: reqwest_middleware::Error::Middleware(e),
+                }),
             GeneratedError::ReqwestMiddleware(source) => Self::Middleware { source },
             GeneratedError::Serde(source) => Self::DecodeResponse { source },
             GeneratedError::Io(source) => Self::ReadResponseBody { source },

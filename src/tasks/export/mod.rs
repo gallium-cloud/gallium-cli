@@ -4,7 +4,6 @@ mod volume_scan;
 
 use crate::api::{ApiClient, path_param};
 use crate::args::GlobalArguments;
-use crate::helpers::auth::get_login_response_for_saved_credentials;
 use crate::helpers::cmd::cmd_progress::CommandProgressUpdater;
 use crate::helpers::mtls::MtlsCredentialHelper;
 use crate::helpers::nbd::poll_for_nbd_response;
@@ -50,11 +49,7 @@ pub async fn export_main(
     global_args: &GlobalArguments,
     args: ExportArguments,
 ) -> Result<(), TaskError> {
-    let api_client = global_args.build_api_client()?.with_access_token(
-        get_login_response_for_saved_credentials(global_args)
-            .await?
-            .try_into()?,
-    );
+    let api_client = global_args.build_authed_api_client().await?;
 
     let volumes = scan_volumes_for_export(&api_client, &args).await?;
     if confirm_export(&volumes, &args)? {

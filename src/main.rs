@@ -1,5 +1,4 @@
 use crate::args::{Action, Invocation};
-use crate::helpers::auth::get_login_response_for_saved_credentials;
 use crate::helpers::env::current_exe;
 use crate::task_common::error::TaskError;
 use clap::Parser;
@@ -31,24 +30,26 @@ async fn main() -> Result<(), TaskError> {
         Some(Action::Version) => crate::tasks::version::print_version_info(),
         None => {
             //TODO: on windows, double-clicking the EXE from the file browser will result in a console window that immediately closes
-            match get_login_response_for_saved_credentials(&invocation.gargs).await {
-                Ok(login_resp) => {
-                    if let Some(org) = login_resp.org.flatten() {
-                        println!("Logged in to Gallium org: {}", org.name);
-                    }
-                    if let Some(avail_orgs) = login_resp.available_orgs
-                        && !avail_orgs.is_empty()
-                    {
-                        println!("{} orgs available.", avail_orgs.len());
-                    }
-                }
-                Err(_) => {
+            let api_client = match invocation.gargs.build_authed_api_client().await {
+                Ok(api_client) => api_client,
+                Err(TaskError::NotLoggedIn) => {
                     println!(
                         "Oops, you're not logged-in. Try `{:?} login`",
                         current_exe()?
                     );
+                    return Ok(());
                 }
+                Err(e) => return Err(e),
             };
+            let login_resp = api_client.refresh_session().await?;
+            if let Some(org) = login_resp.org.flatten() {
+                println!("Logged in to Gallium org: {}", org.name);
+            }
+            if let Some(avail_orgs) = login_resp.available_orgs
+                && !avail_orgs.is_empty()
+            {
+                println!("{} orgs available.", avail_orgs.len());
+            }
             Ok(())
         }
     }

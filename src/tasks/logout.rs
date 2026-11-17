@@ -4,7 +4,7 @@ use gallium_api_client::apis::user_api;
 use gallium_api_client::models::InvalidateTokenRequest;
 
 pub(crate) async fn logout(args: &crate::args::GlobalArguments) -> Result<(), TaskError> {
-    let api_client = args.build_api_client()?;
+    let api_client = args.build_unauthed_api_client()?;
 
     let mut dotfile = read_dotfile().await?;
 

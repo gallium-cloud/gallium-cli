@@ -35,6 +35,8 @@ pub enum TaskError {
     RequestedOperationNotSupported { op: &'static str, reason: String },
     #[snafu(display("API Client Error"), context(false))]
     ApiClientError { source: ApiClientError },
+    #[snafu(display("Not logged in. Run `{} login` first.", clap::crate_name!()))]
+    NotLoggedIn,
     #[snafu(display("API Response missing expected field: {field}"))]
     ApiResponseMissingField { field: &'static str },
     #[snafu(display("Command {slug} failed: {cmd_type}"))]

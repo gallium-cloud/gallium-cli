@@ -1,4 +1,5 @@
 use crate::api::ApiClient;
+use crate::api::auth_session::AuthSession;
 use crate::task_common::error::TaskError;
 use std::sync::Arc;
 
@@ -26,6 +27,7 @@ pub struct GlobalArguments {
 pub enum Action {
     #[clap(hide = true)]
     DlQemuImg,
+
     #[clap(hide = true)]
     Proxy(crate::tasks_internal::proxy::ProxyArguments),
 
@@ -52,17 +54,28 @@ impl GlobalArguments {
         self.api_url.strip_suffix("/").unwrap_or(&self.api_url)
     }
 
-    pub fn build_api_client(&self) -> Result<Arc<ApiClient>, TaskError> {
-        let api_url =
-            self.get_api_url()
-                .parse()
-                .map_err(|e: url::ParseError| TaskError::Initialize {
-                    name: "api client",
-                    source: Box::new(e),
-                })?;
-        ApiClient::new(&api_url).map_err(|e| TaskError::Initialize {
-            name: "api client",
-            source: Box::new(e),
-        })
+    fn parse_api_url(&self) -> Result<url::Url, TaskError> {
+        self.get_api_url()
+            .parse()
+            .map_err(|e: url::ParseError| TaskError::Initialize {
+                name: "api client",
+                source: Box::new(e),
+            })
+    }
+
+    pub fn build_unauthed_api_client(&self) -> Result<Arc<ApiClient>, TaskError> {
+        ApiClient::new(&self.parse_api_url()?).map_err(initialize_error)
+    }
+
+    pub async fn build_authed_api_client(&self) -> Result<Arc<ApiClient>, TaskError> {
+        let session = AuthSession::load(self).await?;
+        ApiClient::with_session(&self.parse_api_url()?, session).map_err(initialize_error)
+    }
+}
+
+fn initialize_error(e: crate::api::errors::ApiClientError) -> TaskError {
+    TaskError::Initialize {
+        name: "api client",
+        source: Box::new(e),
     }
 }
