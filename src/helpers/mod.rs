@@ -1,4 +1,3 @@
-pub mod auth;
 pub mod cmd;
 pub mod dotfile;
 pub mod env;

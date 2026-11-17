@@ -1,5 +1,4 @@
-use crate::api::command_v2_api::CommandApi;
-use crate::api::storage_api::entities::CmdSubmitResponse;
+use crate::api::ApiClient;
 use crate::helpers::cmd::cmd_response::poll_for_cmd_response_type;
 use crate::helpers::helper_cmd_error::HelperCommandError;
 use crate::helpers::mtls::init_mtls_cmd::InitMtlsCredentialsCmdResponse;
@@ -7,6 +6,7 @@ use crate::task_common::error::HelperCommandSnafu;
 use crate::task_common::error::TaskError;
 use base64::Engine;
 use base64::engine::GeneralPurpose;
+use gallium_api_client::models::CmdSubmitResponse;
 use rcgen::{CertificateParams, DnType, ExtendedKeyUsagePurpose, KeyPair};
 use snafu::ResultExt;
 use std::path::Path;
@@ -52,11 +52,11 @@ impl MtlsCredentialHelper {
 
     pub async fn poll_for_credentials(
         self,
-        cmd_api: &CommandApi,
+        api_client: &ApiClient,
         submit_resp: &CmdSubmitResponse,
     ) -> Result<MtlsIssuedCredentialHelper, TaskError> {
         let init_response: InitMtlsCredentialsCmdResponse =
-            poll_for_cmd_response_type(cmd_api, submit_resp, "INIT_MTLS_CREDENTIALS").await?;
+            poll_for_cmd_response_type(api_client, submit_resp, "INIT_MTLS_CREDENTIALS").await?;
 
         MtlsIssuedCredentialHelper::build(self.keypair, init_response)
             .await

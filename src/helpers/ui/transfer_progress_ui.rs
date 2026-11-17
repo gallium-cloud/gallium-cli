@@ -1,8 +1,8 @@
-use crate::api::command_v2_api::entities::ApiCmdStatus;
 use crate::helpers::cmd::cmd_progress::CommandProgressUpdater;
 use crate::helpers::qemu::{ConvertTask, QemuImgConvert};
 use crate::task_common::error::TaskError;
 use cliclack::{MultiProgress, ProgressBar, multi_progress, progress_bar, spinner};
+use gallium_api_client::models::ApiCmdStatus;
 
 pub struct TransferProgressUi {
     pub multi: MultiProgress,
@@ -59,13 +59,13 @@ pub async fn transfer_progress_ui(
             r = &mut convert_task.handle => {
                 return match QemuImgConvert::assert_ok(r) {
                     Ok(_) => {
-                        progress_updater.complete(ApiCmdStatus::COMPLETE).await?;
+                        progress_updater.complete(ApiCmdStatus::Complete).await?;
                         ui.spinner_final.stop("Complete");
                         ui.multi.stop();
                         Ok(())
                     }
                     Err(e) => {
-                        progress_updater.complete(ApiCmdStatus::FAILED).await.ok();
+                        progress_updater.complete(ApiCmdStatus::Failed).await.ok();
                         ui.spinner_final.error("Failed");
                         ui.multi.stop();
 

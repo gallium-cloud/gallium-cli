@@ -1,7 +1,8 @@
-use crate::api::storage_api::StorageApi;
-use crate::api::storage_api::entities::{DiskPoolSummary, ListDiskPoolsPathParams};
+use crate::api::{ApiClient, path_param};
 use crate::task_common::error::TaskError;
 use crate::tasks::import::ImportArguments;
+use gallium_api_client::apis::disk_pool_api;
+use gallium_api_client::models::DiskPoolSummary;
 
 #[derive(Debug, Clone)]
 pub struct DiskPoolDetermination {
@@ -15,19 +16,16 @@ impl DiskPoolDetermination {
     fn from_summary(pool: &DiskPoolSummary, reason: &'static str) -> Self {
         DiskPoolDetermination {
             kube_name: pool.kube_name.clone(),
-            display_name: pool.name.clone(),
+            display_name: pool.name.clone().flatten(),
             reason,
         }
     }
 }
 pub async fn determine_disk_pool(
-    storage_api: &StorageApi,
+    api_client: &ApiClient,
     args: &ImportArguments,
 ) -> Result<DiskPoolDetermination, TaskError> {
-    let disk_pools = storage_api
-        .list_disk_pools(&ListDiskPoolsPathParams {
-            cluster_id: args.target.clone(),
-        })
+    let disk_pools = disk_pool_api::list_disk_pools(api_client.config(), path_param(&args.target)?)
         .await?
         .pools;
 
@@ -39,7 +37,7 @@ pub async fn determine_disk_pool(
             ))
         } else if let Some(pool) = disk_pools
             .iter()
-            .find(|p| p.name.as_deref() == Some(pool_arg))
+            .find(|p| p.name.as_ref().and_then(|name| name.as_deref()) == Some(pool_arg))
         {
             Ok(DiskPoolDetermination::from_summary(
                 pool,

@@ -1,5 +1,5 @@
-use crate::api::storage_api::entities::{CmdSubmitResponse, SubCommand};
 use crate::task_common::error::TaskError;
+use gallium_api_client::models::{CmdSubmitResponse, SubCommand};
 
 pub mod cmd_progress;
 pub mod cmd_response;

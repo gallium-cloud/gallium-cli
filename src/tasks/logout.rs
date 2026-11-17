@@ -1,19 +1,22 @@
-use crate::api::login_api::entities::InvalidateTokenRequest;
 use crate::helpers::dotfile::{read_dotfile, write_dotfile};
 use crate::task_common::error::TaskError;
+use gallium_api_client::apis::user_api;
+use gallium_api_client::models::InvalidateTokenRequest;
 
 pub(crate) async fn logout(args: &crate::args::GlobalArguments) -> Result<(), TaskError> {
-    let login_api = args.build_api_client()?.login_api();
+    let api_client = args.build_unauthed_api_client()?;
 
     let mut dotfile = read_dotfile().await?;
 
     if let Some(refresh_token) = dotfile.refresh_tokens.remove(args.get_api_url()) {
-        let api_response = login_api
-            .invalidate_refresh_token(&InvalidateTokenRequest {
+        let api_response = user_api::invalidate_refresh_token(
+            api_client.config(),
+            InvalidateTokenRequest {
                 invalidate_all: false,
                 refresh_token,
-            })
-            .await?;
+            },
+        )
+        .await?;
 
         println!(
             "Logout response: {}",
