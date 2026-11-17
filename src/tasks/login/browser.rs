@@ -6,8 +6,8 @@ use gallium_api_client::apis::user_api;
 use gallium_api_client::models::{CliTokenRequest, GalliumLoginResponse};
 use oauth2::{CsrfToken, PkceCodeChallenge};
 use snafu::ResultExt;
+use std::io::BufRead;
 use std::time::Duration;
-use tokio::io::{AsyncBufReadExt, BufReader};
 use url::Url;
 
 const CODE_TIMEOUT: Duration = Duration::from_secs(5 * 60);
@@ -81,15 +81,25 @@ fn build_authorize_url(
 }
 
 async fn read_code_stdin() -> Result<String, TaskError> {
-    let mut lines = BufReader::new(tokio::io::stdin()).lines();
-    loop {
-        match lines.next_line().await {
-            Ok(Some(line)) if !line.trim().is_empty() => return Ok(line.trim().to_string()),
-            Ok(Some(_)) => continue,
-            Ok(None) => std::future::pending::<()>().await,
-            Err(e) => return Err(e).whatever_context("read the pasted code"),
+    let (code_tx, code_rx) = tokio::sync::oneshot::channel();
+    std::thread::spawn(move || {
+        let _: Result<(), _> = code_tx.send(first_nonblank_line(std::io::stdin().lock()));
+    });
+    match code_rx.await {
+        Ok(Ok(Some(code))) => Ok(code),
+        Ok(Ok(None)) | Err(_) => std::future::pending().await,
+        Ok(Err(e)) => Err(e).whatever_context("read the pasted code"),
+    }
+}
+
+fn first_nonblank_line(input: impl BufRead) -> std::io::Result<Option<String>> {
+    for line in input.lines() {
+        let line = line?;
+        if !line.trim().is_empty() {
+            return Ok(Some(line.trim().to_string()));
         }
     }
+    Ok(None)
 }
 
 #[cfg(test)]
