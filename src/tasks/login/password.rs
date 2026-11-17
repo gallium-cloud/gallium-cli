@@ -1,10 +1,10 @@
-use crate::helpers::dotfile::{read_dotfile, write_dotfile};
+use crate::args::GlobalArguments;
 use crate::task_common::error::{TaskError, UserInputInvalidSnafu};
 use gallium_api_client::apis::user_api;
-use gallium_api_client::models::GalliumLoginRequest;
+use gallium_api_client::models::{GalliumLoginRequest, GalliumLoginResponse};
 use snafu::ResultExt;
 
-pub(crate) async fn login(args: &crate::args::GlobalArguments) -> Result<(), TaskError> {
+pub async fn password_login(args: &GlobalArguments) -> Result<GalliumLoginResponse, TaskError> {
     let email: String = dialoguer::Input::new()
         .with_prompt("email")
         .interact_text()
@@ -15,14 +15,12 @@ pub(crate) async fn login(args: &crate::args::GlobalArguments) -> Result<(), Tas
         .context(UserInputInvalidSnafu { field: "password" })?;
 
     let mut login_request = GalliumLoginRequest {
-        email: email.clone(),
-        password: password.clone(),
+        email,
+        password,
         otp: None,
     };
 
     let api_client = args.build_unauthed_api_client()?;
-
-    let login_response;
 
     loop {
         let resp = user_api::login(api_client.config(), login_request.clone()).await?;
@@ -33,24 +31,7 @@ pub(crate) async fn login(args: &crate::args::GlobalArguments) -> Result<(), Tas
                 .context(UserInputInvalidSnafu { field: "otp" })?;
             login_request.otp = Some(Some(otp));
         } else {
-            login_response = resp;
-            break;
+            return Ok(resp);
         }
     }
-
-    let refresh_token = login_response.refresh_token.flatten().ok_or_else(|| {
-        TaskError::ApiResponseMissingField {
-            field: "refreshToken",
-        }
-    })?;
-
-    let mut dotfile = read_dotfile().await?;
-
-    dotfile
-        .refresh_tokens
-        .insert(args.get_api_url().to_string(), refresh_token);
-
-    write_dotfile(&dotfile).await?;
-
-    Ok(())
 }

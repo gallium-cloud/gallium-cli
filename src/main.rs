@@ -24,7 +24,7 @@ async fn main() -> Result<(), TaskError> {
         Some(Action::Import(args)) => {
             crate::tasks::import::import_main(&invocation.gargs, args).await
         }
-        Some(Action::Login) => crate::tasks::login::login(&invocation.gargs).await,
+        Some(Action::Login(args)) => crate::tasks::login::login(&invocation.gargs, args).await,
         Some(Action::Logout) => crate::tasks::logout::logout(&invocation.gargs).await,
         Some(Action::Ssh(args)) => crate::tasks::ssh::ssh(&invocation.gargs, &args).await,
         Some(Action::Version) => crate::tasks::version::print_version_info(),

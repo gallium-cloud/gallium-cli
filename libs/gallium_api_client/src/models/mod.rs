@@ -6,6 +6,8 @@ pub mod api_cmd_status;
 pub use self::api_cmd_status::ApiCmdStatus;
 pub mod app_error_response_body;
 pub use self::app_error_response_body::AppErrorResponseBody;
+pub mod cli_token_request;
+pub use self::cli_token_request::CliTokenRequest;
 pub mod cmd_entity;
 pub use self::cmd_entity::CmdEntity;
 pub mod cmd_submit_response;

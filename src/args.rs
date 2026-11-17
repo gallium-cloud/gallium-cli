@@ -18,9 +18,15 @@ pub struct GlobalArguments {
     #[arg(long, default_value = "https://api.gallium.cloud/", hide = true)]
     api_url: String,
 
+    #[arg(long, default_value = "https://console.gallium.cloud/", hide = true)]
+    console_url: String,
+
     /// Optionally specify the org slug of the organisation containing the instance you wish to connect to.
     #[arg(short, long, default_missing_value= Option::None)]
     pub gallium_org: Option<String>,
+
+    #[clap(long, hide = true, default_value_t = 120)]
+    pub token_expiry_margin_seconds: i64,
 }
 
 #[derive(clap::Subcommand)]
@@ -38,7 +44,8 @@ pub enum Action {
     Import(crate::tasks::import::ImportArguments),
 
     /// Login to your Gallium account
-    Login,
+    Login(crate::tasks::login::LoginArguments),
+
     /// Clear saved login token
     Logout,
 
@@ -52,6 +59,13 @@ pub enum Action {
 impl GlobalArguments {
     pub fn get_api_url(&self) -> &str {
         self.api_url.strip_suffix("/").unwrap_or(&self.api_url)
+    }
+
+    /// The web console that approves browser logins.
+    pub fn get_console_url(&self) -> &str {
+        self.console_url
+            .strip_suffix("/")
+            .unwrap_or(&self.console_url)
     }
 
     fn parse_api_url(&self) -> Result<url::Url, TaskError> {
