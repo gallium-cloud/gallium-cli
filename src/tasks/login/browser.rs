@@ -85,3 +85,39 @@ async fn read_code_stdin() -> Result<String, TaskError> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
+
+    use super::*;
+
+    #[test]
+    fn authorize_url_carries_the_contract_parameters() {
+        let url = build_authorize_url(
+            "https://console.example",
+            "chal",
+            "http://127.0.0.1:4000/callback",
+            "st ate",
+            "dev-laptop",
+        )
+        .unwrap();
+        assert_eq!(url.path(), "/cli/authorize");
+        let pairs: Vec<(String, String)> = url
+            .query_pairs()
+            .map(|(k, v)| (k.into_owned(), v.into_owned()))
+            .collect();
+        assert_eq!(
+            pairs,
+            vec![
+                ("code_challenge".to_string(), "chal".to_string()),
+                (
+                    "redirect_uri".to_string(),
+                    "http://127.0.0.1:4000/callback".to_string()
+                ),
+                ("state".to_string(), "st ate".to_string()),
+                ("hostname".to_string(), "dev-laptop".to_string()),
+            ]
+        );
+    }
+}

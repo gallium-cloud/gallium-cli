@@ -118,3 +118,98 @@ pub fn parse_callback<B>(req: &Request<B>) -> CallbackRequest {
     }
     CallbackRequest::Callback { code, state }
 }
+
+#[cfg(test)]
+mod tests {
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
+
+    use super::*;
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    use tokio::net::TcpStream;
+
+    fn request(method: &str, target: &str) -> Request<()> {
+        Request::builder()
+            .method(method)
+            .uri(target)
+            .body(())
+            .unwrap()
+    }
+
+    #[test]
+    fn parse_callback_query() {
+        assert_eq!(
+            parse_callback(&request("GET", "/callback?code=abc&state=s%20t")),
+            CallbackRequest::Callback {
+                code: Some("abc".into()),
+                state: Some("s t".into()),
+            }
+        );
+        assert_eq!(
+            parse_callback(&request("GET", "/callback")),
+            CallbackRequest::Callback {
+                code: None,
+                state: None,
+            }
+        );
+    }
+
+    #[test]
+    fn other_requests_are_not_callbacks() {
+        assert_eq!(
+            parse_callback(&request("GET", "/favicon.ico")),
+            CallbackRequest::Other
+        );
+        assert_eq!(
+            parse_callback(&request("POST", "/callback?code=x")),
+            CallbackRequest::Other
+        );
+    }
+
+    async fn send(port: u16, target: &str) -> String {
+        let mut stream = TcpStream::connect(("127.0.0.1", port)).await.unwrap();
+        stream
+            .write_all(format!("GET {target} HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n").as_bytes())
+            .await
+            .unwrap();
+        let mut response = String::new();
+        stream.read_to_string(&mut response).await.unwrap();
+        response
+    }
+
+    #[tokio::test]
+    async fn ignore_invalid_requests() {
+        let listener = LoopbackListener::bind().await.unwrap();
+        let port = listener.port;
+        assert_eq!(
+            listener.redirect_uri(),
+            format!("http://127.0.0.1:{port}/callback")
+        );
+
+        let waiting = tokio::spawn(async move {
+            listener
+                .wait_for_code("expected", "https://console.example/cli/done")
+                .await
+        });
+
+        let favicon = send(port, "/favicon.ico").await;
+        assert!(favicon.starts_with("HTTP/1.1 404"), "{favicon}");
+
+        let wrong_state = send(port, "/callback?code=stolen&state=other").await;
+        assert!(
+            wrong_state.contains("location: https://console.example/cli/done?error=state_mismatch"),
+            "{wrong_state}"
+        );
+
+        let no_code = send(port, "/callback?state=expected").await;
+        assert!(no_code.contains("?error=missing_code"), "{no_code}");
+
+        let accepted = send(port, "/callback?code=the-code&state=expected").await;
+        assert!(
+            accepted.contains("location: https://console.example/cli/done\r\n"),
+            "{accepted}"
+        );
+
+        let code = waiting.await.unwrap().unwrap();
+        assert_eq!(code, "the-code");
+    }
+}
