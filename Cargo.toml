@@ -24,13 +24,19 @@ directories = "6.0.0"
 dlmgr = "0.4"
 duct = { version = "1" }
 fs2 = "0.4.3"
+gethostname = "1"
 futures-util = { version = "0.3" }
 gallium_api_client = { path = "libs/gallium_api_client" }
 hex-literal = "1.1.0"
 home = { version = "0.5.12" }
 http = "1"
+http-body-util = "0.1"
+hyper = { version = "1", features = ["http1", "server"] }
+hyper-util = { version = "0.1", features = ["tokio"] }
 humansize = "2"
 jwt-compact = { version = "0.8.0" }
+oauth2 = { version = "5", default-features = false }
+open = "5"
 pem = "4"
 qemu_img_cmd_types = { path = "libs/qemu_img_cmd_types" }
 rcgen = { version = "0.14", features = ["crypto","ring", "x509-parser"] }
@@ -42,7 +48,7 @@ serde_json = { version = "1" }
 snafu = { version = "0.9", features = ["rust_1_81"] }
 tempfile = "3"
 time = "0.3"
-tokio = { version = "1", features = ["rt", "macros", "io-std", "fs"] }
+tokio = { version = "1", features = ["rt", "macros", "io-std", "io-util", "fs", "sync", "net", "time"] }
 tokio-tungstenite = { version = "0.30", features = ["rustls-tls-webpki-roots", "stream", "connect"], default-features = false }
 unicode-ellipsis = "0.6"
 unicode-segmentation = "1.13"

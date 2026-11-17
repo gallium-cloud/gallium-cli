@@ -1,10 +1,12 @@
 mod args;
+mod browser;
 mod password;
 
 use crate::helpers::dotfile::{read_dotfile, write_dotfile};
 use crate::task_common::error::TaskError;
 
 use crate::tasks::login::args::LoginMethod;
+use crate::tasks::login::browser::browser_login;
 use crate::tasks::login::password::password_login;
 pub use args::LoginArguments;
 
@@ -13,6 +15,7 @@ pub(crate) async fn login(
     args: LoginArguments,
 ) -> Result<(), TaskError> {
     let login_response = match args.method {
+        LoginMethod::Browser => browser_login(global_args).await?,
         LoginMethod::Password => password_login(global_args).await?,
     };
 
