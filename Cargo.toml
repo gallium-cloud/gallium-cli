@@ -71,6 +71,9 @@ expect_used = "deny"
 # temporarily allow until derive_more is patched for rust 1.100
 redundant_field_names = "allow"
 
+[profile.release]
+lto = "thin"
+
 [profile.dist]
 inherits = "release"
 lto = "thin"
