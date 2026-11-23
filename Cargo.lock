@@ -805,6 +805,7 @@ dependencies = [
 name = "gallium_api_client"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "reqwest",
  "reqwest-middleware",
  "serde",
