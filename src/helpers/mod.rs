@@ -5,5 +5,6 @@ pub mod helper_cmd_error;
 pub mod loopback;
 pub mod mtls;
 pub mod nbd;
+pub mod output;
 pub mod qemu;
 pub mod ui;

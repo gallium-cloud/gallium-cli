@@ -381,6 +381,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "comfy-table"
+version = "8.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b96a46ad395a5e00676eddaca4a45ed78b29c08be5a878d35e4b071c625637dd"
+dependencies = [
+ "unicode-segmentation",
+ "unicode-width",
+]
+
+[[package]]
 name = "console"
 version = "0.16.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -762,6 +772,7 @@ dependencies = [
  "chrono",
  "clap",
  "cliclack",
+ "comfy-table",
  "derive_more",
  "dialoguer",
  "directories",
@@ -778,6 +789,7 @@ dependencies = [
  "humansize",
  "hyper",
  "hyper-util",
+ "indicatif",
  "jwt-compact",
  "oauth2",
  "open",
