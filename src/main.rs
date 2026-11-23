@@ -5,6 +5,7 @@ use clap::Parser;
 
 mod api;
 mod args;
+mod generated;
 pub mod helpers;
 mod task_common;
 mod tasks;
@@ -18,6 +19,7 @@ async fn main() -> Result<(), TaskError> {
     match invocation.action {
         Some(Action::DlQemuImg) => crate::tasks_internal::qemu_img::dl_qemu_img().await,
         Some(Action::Proxy(args)) => crate::tasks_internal::proxy::proxy(&args).await,
+        Some(Action::Generated(action)) => crate::generated::run(&invocation.gargs, action).await,
         Some(Action::Export(args)) => {
             crate::tasks::export::export_main(&invocation.gargs, args).await
         }

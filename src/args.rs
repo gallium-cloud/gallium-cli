@@ -31,6 +31,9 @@ pub struct GlobalArguments {
 
 #[derive(clap::Subcommand)]
 pub enum Action {
+    #[command(flatten)]
+    Generated(crate::generated::GeneratedAction),
+
     #[clap(hide = true)]
     DlQemuImg,
 

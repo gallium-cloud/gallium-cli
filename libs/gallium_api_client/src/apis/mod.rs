@@ -128,6 +128,7 @@ pub mod cluster_virtual_machine_api;
 pub mod cluster_volume_api;
 pub mod command_api_v2_api;
 pub mod disk_pool_api;
+pub mod engines_api;
 pub mod user_api;
 pub mod virtual_machine_api;
 
