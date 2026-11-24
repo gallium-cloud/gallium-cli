@@ -43,7 +43,10 @@ pub enum TaskError {
     #[snafu(display("API Client Error"), context(false))]
     ApiClientError { source: ApiClientError },
 
-    #[snafu(display("Not logged in. Run `{} login` first.", clap::crate_name!()))]
+    #[snafu(display(
+        "Not logged in. Run `{} login` first.",
+        crate::helpers::cli::exe_display_name()
+    ))]
     NotLoggedIn,
 
     #[snafu(display("API Response missing expected field: {field}"))]

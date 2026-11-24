@@ -51,14 +51,17 @@ const COLUMNS: &[Column] = &[
     },
 ];
 
-pub(crate) async fn org(gargs: &GlobalArguments, command: OrgCommand) -> Result<(), TaskError> {
+pub(crate) async fn org(
+    global_args: &GlobalArguments,
+    command: OrgCommand,
+) -> Result<(), TaskError> {
     match command {
-        OrgCommand::List(args) => list(gargs, &args).await,
+        OrgCommand::List(args) => list(global_args, &args).await,
     }
 }
 
-async fn list(gargs: &GlobalArguments, args: &ListArguments) -> Result<(), TaskError> {
-    let api_client = gargs.build_authed_api_client().await?;
+async fn list(global_args: &GlobalArguments, args: &ListArguments) -> Result<(), TaskError> {
+    let api_client = global_args.build_authed_api_client().await?;
     let response = api_client.refresh_session().await?;
     render_list(&org_list(&response), "/orgs", COLUMNS, &args.output)
 }

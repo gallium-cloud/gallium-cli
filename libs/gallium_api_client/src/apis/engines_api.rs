@@ -90,7 +90,7 @@ pub async fn list_all_applications(
     engine_slug: Option<&str>,
     phase: Option<models::Phase>,
     application_id: Option<&str>,
-) -> Result<models::ApplicationList2, Error<ListAllApplicationsError>> {
+) -> Result<models::GlobalApplicationList, Error<ListAllApplicationsError>> {
     // add a prefix to parameters to efficiently prevent name collisions
     let p_query_engine_slug = engine_slug;
     let p_query_phase = phase;
@@ -132,12 +132,12 @@ pub async fn list_all_applications(
             ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
             ContentType::Text => {
                 return Err(Error::from(serde_json::Error::custom(
-                    "Received `text/plain` content type response that cannot be converted to `models::ApplicationList2`",
+                    "Received `text/plain` content type response that cannot be converted to `models::GlobalApplicationList`",
                 )));
             }
             ContentType::Unsupported(unknown_type) => {
                 return Err(Error::from(serde_json::Error::custom(format!(
-                    "Received `{unknown_type}` content type response that cannot be converted to `models::ApplicationList2`"
+                    "Received `{unknown_type}` content type response that cannot be converted to `models::GlobalApplicationList`"
                 ))));
             }
         }

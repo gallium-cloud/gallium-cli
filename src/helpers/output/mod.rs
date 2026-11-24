@@ -58,18 +58,82 @@ pub fn render_list<T: Serialize>(
     Ok(())
 }
 
-pub fn render_detail<T: Serialize>(
-    response: &T,
-    fields: &[Field],
-    args: &OutputArgs,
-) -> Result<(), TaskError> {
-    let response = to_value(response)?;
-    let text = match args.output {
-        OutputFormat::Text => detail_text(&response, fields, Utc::now()),
-        OutputFormat::Json => to_json(&response)?,
-    };
-    println!("{text}");
-    Ok(())
+pub enum View {
+    List {
+        items: &'static str,
+        columns: &'static [Column],
+    },
+    Detail {
+        fields: &'static [Field],
+    },
+}
+
+pub struct Section {
+    pub name: Option<&'static str>,
+    pub title: Option<&'static str>,
+    pub view: View,
+}
+
+pub struct Report<'a> {
+    args: &'a OutputArgs,
+    sections: Vec<(&'static Section, Value)>,
+}
+
+impl<'a> Report<'a> {
+    pub fn new(args: &'a OutputArgs) -> Self {
+        Self {
+            args,
+            sections: Vec::new(),
+        }
+    }
+
+    pub fn add<T: Serialize>(
+        &mut self,
+        section: &'static Section,
+        response: &T,
+    ) -> Result<(), TaskError> {
+        self.sections.push((section, to_value(response)?));
+        Ok(())
+    }
+
+    pub fn print(self) -> Result<(), TaskError> {
+        let text = match self.args.output {
+            OutputFormat::Text => self.text(Utc::now())?,
+            OutputFormat::Json => to_json(&self.json())?,
+        };
+        println!("{text}");
+        Ok(())
+    }
+
+    fn text(&self, now: DateTime<Utc>) -> Result<String, TaskError> {
+        let mut parts = Vec::new();
+        for (section, response) in &self.sections {
+            let body = match &section.view {
+                View::List { items, columns } => list_text(response, items, columns, now)?,
+                View::Detail { fields } => detail_text(response, fields, now),
+            };
+            parts.push(match section.title {
+                Some(title) => format!("{title}:\n{body}"),
+                None => body,
+            });
+        }
+        Ok(parts.join("\n\n"))
+    }
+
+    fn json(&self) -> Value {
+        match self.sections.as_slice() {
+            [(Section { name: None, .. }, response)] => response.clone(),
+            sections => sections
+                .iter()
+                .map(|(section, response)| {
+                    (
+                        section.name.unwrap_or_default().to_string(),
+                        response.clone(),
+                    )
+                })
+                .collect(),
+        }
+    }
 }
 
 fn to_value<T: Serialize>(response: &T) -> Result<Value, TaskError> {
