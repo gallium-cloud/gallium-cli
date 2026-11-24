@@ -1,5 +1,4 @@
 use crate::args::{Action, Invocation};
-use crate::helpers::env::current_exe;
 use crate::task_common::error::TaskError;
 use clap::Parser;
 
@@ -43,8 +42,8 @@ async fn main() -> Result<(), TaskError> {
                 Ok(api_client) => api_client,
                 Err(TaskError::NotLoggedIn) => {
                     println!(
-                        "Oops, you're not logged-in. Try `{:?} login`",
-                        current_exe()?
+                        "Oops, you're not logged-in. Try `{} login`",
+                        crate::helpers::cli::exe_display_name()
                     );
                     return Ok(());
                 }

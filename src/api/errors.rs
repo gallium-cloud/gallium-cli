@@ -26,7 +26,7 @@ pub enum ApiClientError {
 
     #[snafu(display(
         "Login session expired or revoked. Run `{} login` again.",
-        clap::crate_name!()
+        crate::helpers::cli::exe_display_name()
     ))]
     SessionExpired,
 
