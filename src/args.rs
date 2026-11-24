@@ -56,6 +56,10 @@ pub enum Action {
     /// Clear saved login token
     Logout,
 
+    /// Manage Gallium organisations
+    #[command(subcommand)]
+    Org(crate::tasks::org::OrgCommand),
+
     /// SSH to an instance on a Gallium server
     Ssh(crate::tasks::ssh::SshArguments),
 
