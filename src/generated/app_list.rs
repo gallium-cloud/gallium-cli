@@ -44,8 +44,8 @@ const COLUMNS: &[Column] = &[
     },
 ];
 
-pub async fn run(gargs: &GlobalArguments, args: Args) -> Result<(), TaskError> {
-    let api_client = gargs.build_authed_api_client().await?;
+pub async fn run(global_args: &GlobalArguments, args: Args) -> Result<(), TaskError> {
+    let api_client = global_args.build_authed_api_client().await?;
     let response =
         engines_api::list_all_applications(api_client.config(), None, None, None).await?;
     render_list(&response, "/items", COLUMNS, &args.output)

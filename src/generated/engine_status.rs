@@ -26,8 +26,8 @@ const FIELDS: &[Field] = &[
     },
 ];
 
-pub async fn run(gargs: &GlobalArguments, args: Args) -> Result<(), TaskError> {
-    let api_client = gargs.build_authed_api_client().await?;
+pub async fn run(global_args: &GlobalArguments, args: Args) -> Result<(), TaskError> {
+    let api_client = global_args.build_authed_api_client().await?;
     let response =
         engines_api::get_engine_status(api_client.config(), crate::api::path_param(&args.slug)?)
             .await?;

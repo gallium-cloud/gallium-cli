@@ -28,13 +28,13 @@ pub enum EngineCommand {
     Status(engine_status::Args),
 }
 
-pub async fn run(gargs: &GlobalArguments, action: GeneratedAction) -> Result<(), TaskError> {
+pub async fn run(global_args: &GlobalArguments, action: GeneratedAction) -> Result<(), TaskError> {
     match action {
         GeneratedAction::App(command) => match command {
-            AppCommand::List(args) => app_list::run(gargs, args).await,
+            AppCommand::List(args) => app_list::run(global_args, args).await,
         },
         GeneratedAction::Engine(command) => match command {
-            EngineCommand::Status(args) => engine_status::run(gargs, args).await,
+            EngineCommand::Status(args) => engine_status::run(global_args, args).await,
         },
     }
 }
