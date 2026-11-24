@@ -7,7 +7,7 @@ use std::sync::Arc;
 #[command(version, arg_required_else_help = true)]
 pub struct Invocation {
     #[command(flatten)]
-    pub gargs: GlobalArguments,
+    pub global_args: GlobalArguments,
 
     #[command(subcommand)]
     pub action: Option<Action>,
