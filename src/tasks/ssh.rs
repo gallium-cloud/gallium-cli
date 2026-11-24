@@ -12,7 +12,7 @@ pub(crate) struct SshArguments {
 }
 
 pub(crate) async fn ssh(
-    gargs: &crate::args::GlobalArguments,
+    global_args: &crate::args::GlobalArguments,
     args: &SshArguments,
 ) -> Result<(), TaskError> {
     let host = match args.destination.split_once('@') {
@@ -20,7 +20,7 @@ pub(crate) async fn ssh(
         None => args.destination.as_str(),
     };
 
-    let api_client = gargs.build_authed_api_client().await?;
+    let api_client = global_args.build_authed_api_client().await?;
 
     let port = "22";
     let ws_url = virtual_machine_api::get_ws_url_for_vm_service(api_client.config(), port, host)
