@@ -57,7 +57,7 @@ pub enum Action {
     Logout,
 
     /// Manage Gallium organisations
-    #[command(subcommand)]
+    #[command(subcommand, visible_alias = "orgs")]
     Org(crate::tasks::org::OrgCommand),
 
     /// SSH to an instance on a Gallium server
