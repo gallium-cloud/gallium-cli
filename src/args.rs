@@ -23,8 +23,8 @@ pub struct GlobalArguments {
 
     /// Specify the org slug of the organisation to work with
     #[arg(
-        short = 'o',
         long = "org",
+        global = true,
         default_missing_value = Option::None
     )]
     pub gallium_org: Option<String>,
