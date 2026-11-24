@@ -7,7 +7,7 @@ use std::sync::Arc;
 #[command(version, arg_required_else_help = true)]
 pub struct Invocation {
     #[command(flatten)]
-    pub gargs: GlobalArguments,
+    pub global_args: GlobalArguments,
 
     #[command(subcommand)]
     pub action: Option<Action>,
@@ -21,8 +21,12 @@ pub struct GlobalArguments {
     #[arg(long, default_value = "https://console.gallium.cloud/", hide = true)]
     console_url: String,
 
-    /// Optionally specify the org slug of the organisation containing the instance you wish to connect to.
-    #[arg(short, long, default_missing_value= Option::None)]
+    /// Specify the org slug of the organisation to work with
+    #[arg(
+        short = 'o',
+        long = "org",
+        default_missing_value = Option::None
+    )]
     pub gallium_org: Option<String>,
 
     #[clap(long, hide = true, default_value_t = 120)]
@@ -51,6 +55,10 @@ pub enum Action {
 
     /// Clear saved login token
     Logout,
+
+    /// Manage Gallium organisations
+    #[command(subcommand, visible_alias = "orgs")]
+    Org(crate::tasks::org::OrgCommand),
 
     /// SSH to an instance on a Gallium server
     Ssh(crate::tasks::ssh::SshArguments),

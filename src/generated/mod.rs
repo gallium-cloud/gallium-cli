@@ -9,10 +9,10 @@ pub mod engine_status;
 #[derive(clap::Subcommand)]
 pub enum GeneratedAction {
     /// Manage container engine applications
-    #[command(subcommand)]
+    #[command(subcommand, visible_alias = "apps")]
     App(AppCommand),
     /// Manage container engines
-    #[command(subcommand)]
+    #[command(subcommand, visible_alias = "engines")]
     Engine(EngineCommand),
 }
 

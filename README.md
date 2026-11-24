@@ -10,15 +10,15 @@ Usage
 
 First, login to your account with
 
-    gallium-cli login
+    ga login
 
 Then you can ssh to an instance based on its name with
 
-    gallium-cli ssh gallium@my-instance
+    ga ssh gallium@my-instance
 
 If the instance name is ambiguous, you can also use the instance ID:
 
-    gallium-cli ssh gallium@7x0boKoZRB6ejT1773YtdwDY
+    ga ssh gallium@7x0boKoZRB6ejT1773YtdwDY
 
 
 Currently only virtual machines with a NAT network are supported, but in the future we will support any instance with an SSH server. 

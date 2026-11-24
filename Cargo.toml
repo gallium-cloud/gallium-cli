@@ -19,6 +19,10 @@ path-guid = "D36ECD81-D5CD-4F9F-B240-2AEA52A3053F"
 license = false
 eula = false
 
+[[bin]]
+name = "ga"
+path = "src/main.rs"
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
