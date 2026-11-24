@@ -21,8 +21,12 @@ pub struct GlobalArguments {
     #[arg(long, default_value = "https://console.gallium.cloud/", hide = true)]
     console_url: String,
 
-    /// Optionally specify the org slug of the organisation containing the instance you wish to connect to.
-    #[arg(short, long, default_missing_value= Option::None)]
+    /// Specify the org slug of the organisation to work with
+    #[arg(
+        short = 'o',
+        long = "org",
+        default_missing_value = Option::None
+    )]
     pub gallium_org: Option<String>,
 
     #[clap(long, hide = true, default_value_t = 120)]
