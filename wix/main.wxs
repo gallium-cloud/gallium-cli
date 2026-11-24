@@ -123,9 +123,9 @@
                         <Component Id='binary0' Guid='*'>
                             <File
                                 Id='exe0'
-                                Name='gallium-cli.exe'
+                                Name='ga.exe'
                                 DiskId='1'
-                                Source='$(var.CargoTargetBinDir)\gallium-cli.exe'
+                                Source='$(var.CargoTargetBinDir)\ga.exe'
                                 KeyPath='yes'/>
                         </Component>
                     </Directory>
