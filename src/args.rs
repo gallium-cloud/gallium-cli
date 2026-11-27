@@ -44,6 +44,10 @@ pub enum Action {
     #[clap(hide = true)]
     Proxy(crate::tasks_internal::proxy::ProxyArguments),
 
+    /// Work with Gallium container engine AppSpec documents
+    #[command(subcommand, visible_alias = "appspec")]
+    AppSpec(crate::tasks::appspec::AppSpecCommand),
+
     /// Export virtual disks from a Gallium deployment
     Export(crate::tasks::export::ExportArguments),
 

@@ -55,6 +55,9 @@ pub enum TaskError {
     #[snafu(display("Command {slug} failed: {cmd_type}"))]
     CommandFailure { slug: String, cmd_type: String },
 
+    #[snafu(display("{} is not a valid AppSpec", path.display()))]
+    AppSpecInvalid { path: PathBuf },
+
     #[snafu(display(
         "Command {slug} has the status {status}, which this version of the CLI does not know"
     ))]

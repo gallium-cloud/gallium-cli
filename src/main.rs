@@ -21,6 +21,9 @@ async fn main() -> Result<(), TaskError> {
         Some(Action::Generated(action)) => {
             crate::generated::run(&invocation.global_args, action).await
         }
+        Some(Action::AppSpec(command)) => {
+            crate::tasks::appspec::app_spec_main(&invocation.global_args, command).await
+        }
         Some(Action::Export(args)) => {
             crate::tasks::export::export_main(&invocation.global_args, args).await
         }
