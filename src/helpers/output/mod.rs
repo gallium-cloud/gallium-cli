@@ -343,4 +343,28 @@ mod tests {
 
         assert_eq!(report.json(), json!({ "online": true }));
     }
+
+    static LOG: Section = Section {
+        name: None,
+        title: None,
+        view: View::Lines {
+            items: "/events",
+            pointer: "/text",
+        },
+    };
+
+    #[test]
+    fn log_line_formatting() -> Result<(), TaskError> {
+        let mut report = Report::new(&ARGS);
+        report.add(
+            &LOG,
+            &json!({ "events": [{ "text": "started  worker 1" }, { "text": "" }, { "text": "ready" }] }),
+        )?;
+        assert_eq!(report.text(Utc::now())?, "started  worker 1\n\nready");
+
+        let mut empty = Report::new(&ARGS);
+        empty.add(&LOG, &json!({ "events": [] }))?;
+        assert_eq!(empty.text(Utc::now())?, "");
+        Ok(())
+    }
 }
