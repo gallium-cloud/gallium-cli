@@ -1,5 +1,6 @@
 pub mod cli;
 pub mod cmd;
+pub mod document;
 pub mod dotfile;
 pub mod env;
 pub mod helper_cmd_error;
