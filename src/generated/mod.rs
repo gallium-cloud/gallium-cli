@@ -8,6 +8,9 @@ pub mod app_get;
 pub mod app_list;
 pub mod app_logs;
 pub mod app_new;
+pub mod app_restart;
+pub mod app_start;
+pub mod app_stop;
 pub mod engine_list;
 pub mod engine_status;
 
@@ -37,6 +40,12 @@ pub enum AppCommand {
     /// Create a new container engine app
     #[command(visible_alias = "create")]
     New(app_new::Args),
+    /// Completely stop a running app
+    Stop(app_stop::Args),
+    /// Start up a previously stopped app
+    Start(app_start::Args),
+    /// Restart a container
+    Restart(app_restart::Args),
 }
 
 #[derive(clap::Subcommand)]
@@ -55,6 +64,9 @@ pub async fn run(global_args: &GlobalArguments, action: GeneratedAction) -> Resu
             AppCommand::Get(args) => app_get::run(global_args, args).await,
             AppCommand::Logs(args) => app_logs::run(global_args, args).await,
             AppCommand::New(args) => app_new::run(global_args, args).await,
+            AppCommand::Stop(args) => app_stop::run(global_args, args).await,
+            AppCommand::Start(args) => app_start::run(global_args, args).await,
+            AppCommand::Restart(args) => app_restart::run(global_args, args).await,
         },
         GeneratedAction::Engine(command) => match command {
             EngineCommand::List(args) => engine_list::run(global_args, args).await,
