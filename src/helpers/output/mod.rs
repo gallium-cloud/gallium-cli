@@ -18,6 +18,12 @@ pub struct OutputArgs {
     output: OutputFormat,
 }
 
+impl OutputArgs {
+    pub fn is_json(&self) -> bool {
+        matches!(self.output, OutputFormat::Json)
+    }
+}
+
 #[derive(Clone, Copy, ValueEnum)]
 pub enum OutputFormat {
     Text,
