@@ -13,6 +13,8 @@ const TOKEN_ROUTE: &str = "/api/cli/token";
 pub struct AuthorizeUrl {
     pub text: String,
     pub code_challenge: String,
+    pub redirect_uri: String,
+    pub state: String,
 }
 
 impl CliSandbox {
@@ -47,6 +49,8 @@ impl CliSandbox {
         take("hostname");
         let authorize_url = AuthorizeUrl {
             code_challenge: take("code_challenge"),
+            redirect_uri: take("redirect_uri"),
+            state: take("state"),
             text,
         };
         (login, authorize_url)
@@ -54,6 +58,28 @@ impl CliSandbox {
 }
 
 impl AuthorizeUrl {
+    pub async fn open_callback(&self, code: &str, state: &str) -> String {
+        let mut callback = Url::parse(&self.redirect_uri).unwrap();
+        assert_eq!(callback.host_str(), Some("127.0.0.1"));
+        assert_eq!(callback.path(), "/callback");
+        callback
+            .query_pairs_mut()
+            .append_pair("code", code)
+            .append_pair("state", state);
+
+        let response = reqwest::Client::builder()
+            .redirect(reqwest::redirect::Policy::none())
+            .no_proxy()
+            .build()
+            .unwrap()
+            .get(callback)
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(response.status(), reqwest::StatusCode::FOUND);
+        response.headers()["location"].to_str().unwrap().to_string()
+    }
+
     pub async fn assert_code_exchanged(&self, sandbox: &CliSandbox, code: &str) {
         let bodies = sandbox.requests_for_route(TOKEN_ROUTE).await;
         let [body] = bodies.as_slice() else {
