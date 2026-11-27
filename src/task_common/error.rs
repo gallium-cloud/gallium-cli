@@ -74,6 +74,12 @@ pub enum TaskError {
     ))]
     CommandStatusUnknown { slug: String, status: String },
 
+    #[snafu(display("Confirmation declined"))]
+    ConfirmationDeclined,
+
+    #[snafu(display("Confirmation required to perform destructive action (pass --yes)"))]
+    ConfirmationRequired,
+
     #[snafu(display("Command {slug} failed: {reason}"))]
     CommandFailedWithReason { slug: String, reason: String },
 

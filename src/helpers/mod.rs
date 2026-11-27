@@ -1,5 +1,6 @@
 pub mod cli;
 pub mod cmd;
+pub mod confirm;
 pub mod document;
 pub mod dotfile;
 pub mod engine;
