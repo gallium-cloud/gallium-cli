@@ -131,6 +131,7 @@ pub mod command_api_v2_api;
 pub mod commands_api;
 pub mod disk_pool_api;
 pub mod engines_api;
+pub mod host_api;
 pub mod user_api;
 pub mod virtual_machine_api;
 

@@ -78,6 +78,8 @@ pub mod gallium_user;
 pub use self::gallium_user::GalliumUser;
 pub mod global_application_list;
 pub use self::global_application_list::GlobalApplicationList;
+pub mod host_summary;
+pub use self::host_summary::HostSummary;
 pub mod invalidate_token_request;
 pub use self::invalidate_token_request::InvalidateTokenRequest;
 pub mod issue;
