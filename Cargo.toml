@@ -74,6 +74,11 @@ yaml-rust2 = { version = "0.13", default-features = false }
 annotate-snippets = "0.12"
 
 
+[dev-dependencies]
+sha2 = "0.10"
+tokio = { version = "1", features = ["process"] }
+wiremock = "0.6"
+
 [build-dependencies]
 time = "0.3"
 
