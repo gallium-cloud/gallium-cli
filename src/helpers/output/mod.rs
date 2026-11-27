@@ -58,6 +58,19 @@ pub fn render_list<T: Serialize>(
     Ok(())
 }
 
+pub fn render_result<T: Serialize>(
+    response: &T,
+    message: &str,
+    args: &OutputArgs,
+) -> Result<(), TaskError> {
+    let text = match args.output {
+        OutputFormat::Text => message.to_string(),
+        OutputFormat::Json => to_json(&to_value(response)?)?,
+    };
+    println!("{text}");
+    Ok(())
+}
+
 pub enum View {
     List {
         items: &'static str,
@@ -65,6 +78,10 @@ pub enum View {
     },
     Detail {
         fields: &'static [Field],
+    },
+    Lines {
+        items: &'static str,
+        pointer: &'static str,
     },
 }
 
@@ -76,14 +93,25 @@ pub struct Section {
 
 pub struct Report<'a> {
     args: &'a OutputArgs,
-    sections: Vec<(&'static Section, Value)>,
+    responses: Vec<Response>,
+}
+
+struct Response {
+    sections: Vec<&'static Section>,
+    value: Value,
+}
+
+impl Response {
+    fn name(&self) -> Option<&'static str> {
+        self.sections.first().and_then(|section| section.name)
+    }
 }
 
 impl<'a> Report<'a> {
     pub fn new(args: &'a OutputArgs) -> Self {
         Self {
             args,
-            sections: Vec::new(),
+            responses: Vec::new(),
         }
     }
 
@@ -92,7 +120,18 @@ impl<'a> Report<'a> {
         section: &'static Section,
         response: &T,
     ) -> Result<(), TaskError> {
-        self.sections.push((section, to_value(response)?));
+        self.add_views(&[section], response)
+    }
+
+    pub fn add_views<T: Serialize>(
+        &mut self,
+        sections: &[&'static Section],
+        response: &T,
+    ) -> Result<(), TaskError> {
+        self.responses.push(Response {
+            sections: sections.to_vec(),
+            value: to_value(response)?,
+        });
         Ok(())
     }
 
@@ -101,34 +140,41 @@ impl<'a> Report<'a> {
             OutputFormat::Text => self.text(Utc::now())?,
             OutputFormat::Json => to_json(&self.json())?,
         };
-        println!("{text}");
+        if !text.is_empty() {
+            println!("{text}");
+        }
         Ok(())
     }
 
     fn text(&self, now: DateTime<Utc>) -> Result<String, TaskError> {
         let mut parts = Vec::new();
-        for (section, response) in &self.sections {
-            let body = match &section.view {
-                View::List { items, columns } => list_text(response, items, columns, now)?,
-                View::Detail { fields } => detail_text(response, fields, now),
-            };
-            parts.push(match section.title {
-                Some(title) => format!("{title}:\n{body}"),
-                None => body,
-            });
+        for response in &self.responses {
+            for section in &response.sections {
+                let body = match &section.view {
+                    View::List { items, columns } => {
+                        list_text(&response.value, items, columns, now)?
+                    }
+                    View::Detail { fields } => detail_text(&response.value, fields, now),
+                    View::Lines { items, pointer } => lines_text(&response.value, items, pointer)?,
+                };
+                parts.push(match section.title {
+                    Some(title) => format!("{title}:\n{body}"),
+                    None => body,
+                });
+            }
         }
         Ok(parts.join("\n\n"))
     }
 
     fn json(&self) -> Value {
-        match self.sections.as_slice() {
-            [(Section { name: None, .. }, response)] => response.clone(),
-            sections => sections
+        match self.responses.as_slice() {
+            [response] if response.name().is_none() => response.value.clone(),
+            responses => responses
                 .iter()
-                .map(|(section, response)| {
+                .map(|response| {
                     (
-                        section.name.unwrap_or_default().to_string(),
-                        response.clone(),
+                        response.name().unwrap_or_default().to_string(),
+                        response.value.clone(),
                     )
                 })
                 .collect(),
@@ -163,6 +209,21 @@ fn list_text(
         );
     }
     Ok(table_text(table))
+}
+
+fn lines_text(response: &Value, items: &str, pointer: &str) -> Result<String, TaskError> {
+    let Some(items) = response.pointer(items).and_then(Value::as_array) else {
+        whatever!("API response has no list at {items}");
+    };
+    Ok(items
+        .iter()
+        .map(|item| match item.pointer(pointer) {
+            Some(Value::String(text)) => text.clone(),
+            Some(other) => other.to_string(),
+            None => String::new(),
+        })
+        .collect::<Vec<_>>()
+        .join("\n"))
 }
 
 fn detail_text(response: &Value, fields: &[Field], now: DateTime<Utc>) -> String {
@@ -208,4 +269,131 @@ fn age(timestamp: &str, now: DateTime<Utc>) -> Option<String> {
     let then = DateTime::parse_from_rfc3339(timestamp).ok()?;
     let elapsed = now.signed_duration_since(then).to_std().unwrap_or_default();
     Some(format!("{:#} ago", HumanDuration(elapsed)))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    static STATUS: Section = Section {
+        name: Some("status"),
+        title: None,
+        view: View::Detail {
+            fields: &[Field {
+                label: "Online",
+                pointer: "/online",
+                format: Format::Boolean,
+            }],
+        },
+    };
+
+    static APPS: Section = Section {
+        name: Some("apps"),
+        title: Some("Apps"),
+        view: View::List {
+            items: "/items",
+            columns: &[Column {
+                header: "NAME",
+                pointer: "/name",
+                format: Format::Text,
+            }],
+        },
+    };
+
+    static UNNAMED: Section = Section {
+        name: None,
+        title: None,
+        view: View::Detail { fields: &[] },
+    };
+
+    const ARGS: OutputArgs = OutputArgs {
+        output: OutputFormat::Text,
+    };
+
+    #[test]
+    fn sections_print_in_order_with_titles() {
+        let mut report = Report::new(&ARGS);
+        report.add(&STATUS, &json!({ "online": true })).unwrap();
+        report
+            .add(&APPS, &json!({ "items": [{ "name": "wiki" }] }))
+            .unwrap();
+
+        let text = report.text(Utc::now()).unwrap();
+
+        assert_eq!(text, "Online:  yes\n\nApps:\nNAME\nwiki");
+    }
+
+    #[test]
+    fn json_output_keys_by_section() {
+        let mut report = Report::new(&ARGS);
+        report.add(&STATUS, &json!({ "online": true })).unwrap();
+        report.add(&APPS, &json!({ "items": [] })).unwrap();
+
+        assert_eq!(
+            report.json(),
+            json!({ "status": { "online": true }, "apps": { "items": [] } })
+        );
+    }
+
+    #[test]
+    fn json_output_one_section() {
+        let mut report = Report::new(&ARGS);
+        report.add(&UNNAMED, &json!({ "online": true })).unwrap();
+
+        assert_eq!(report.json(), json!({ "online": true }));
+    }
+
+    static LOG: Section = Section {
+        name: None,
+        title: None,
+        view: View::Lines {
+            items: "/events",
+            pointer: "/text",
+        },
+    };
+
+    #[test]
+    fn log_line_formatting() -> Result<(), TaskError> {
+        let mut report = Report::new(&ARGS);
+        report.add(
+            &LOG,
+            &json!({ "events": [{ "text": "started  worker 1" }, { "text": "" }, { "text": "ready" }] }),
+        )?;
+        assert_eq!(report.text(Utc::now())?, "started  worker 1\n\nready");
+
+        let mut empty = Report::new(&ARGS);
+        empty.add(&LOG, &json!({ "events": [] }))?;
+        assert_eq!(empty.text(Utc::now())?, "");
+        Ok(())
+    }
+
+    static HOSTS: Section = Section {
+        name: None,
+        title: None,
+        view: View::List {
+            items: "",
+            columns: &[Column {
+                header: "NAME",
+                pointer: "/name",
+                format: Format::Text,
+            }],
+        },
+    };
+
+    #[test]
+    fn top_level_array() -> Result<(), TaskError> {
+        let mut report = Report::new(&ARGS);
+        report.add(
+            &HOSTS,
+            &json!([{ "name": "edge-syd-01" }, { "name": "lab" }]),
+        )?;
+
+        assert_eq!(report.text(Utc::now())?, "NAME\nedge-syd-01\nlab");
+        assert_eq!(
+            report.json(),
+            json!([{ "name": "edge-syd-01" }, { "name": "lab" }])
+        );
+        Ok(())
+    }
 }

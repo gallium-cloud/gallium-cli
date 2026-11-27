@@ -1,6 +1,7 @@
 use crate::task_common::error::TaskError;
 use gallium_api_client::models::{CmdSubmitResponse, SubCommand};
 
+pub mod cmd_completion;
 pub mod cmd_progress;
 pub mod cmd_response;
 
