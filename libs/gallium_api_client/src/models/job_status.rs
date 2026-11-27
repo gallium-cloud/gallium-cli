@@ -11,27 +11,12 @@ pub struct JobStatus {
     pub when: models::JobTrigger,
     #[serde(rename = "phase")]
     pub phase: models::JobPhase,
-    #[serde(
-        rename = "lockfile",
-        default,
-        with = "::serde_with::rust::double_option",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub lockfile: Option<Option<String>>,
-    #[serde(
-        rename = "startedAt",
-        default,
-        with = "::serde_with::rust::double_option",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub started_at: Option<Option<chrono::DateTime<chrono::FixedOffset>>>,
-    #[serde(
-        rename = "result",
-        default,
-        with = "::serde_with::rust::double_option",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub result: Option<Option<Box<models::JobResult>>>,
+    #[serde(rename = "lockfile", skip_serializing_if = "Option::is_none")]
+    pub lockfile: Option<String>,
+    #[serde(rename = "startedAt", skip_serializing_if = "Option::is_none")]
+    pub started_at: Option<chrono::DateTime<chrono::FixedOffset>>,
+    #[serde(rename = "result", skip_serializing_if = "Option::is_none")]
+    pub result: Option<models::JobResult>,
 }
 
 impl JobStatus {

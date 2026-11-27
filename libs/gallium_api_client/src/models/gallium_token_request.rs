@@ -7,13 +7,8 @@ use serde::{Deserialize, Serialize};
 pub struct GalliumTokenRequest {
     #[serde(rename = "refreshToken")]
     pub refresh_token: String,
-    #[serde(
-        rename = "orgSlug",
-        default,
-        with = "::serde_with::rust::double_option",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub org_slug: Option<Option<String>>,
+    #[serde(rename = "orgSlug", skip_serializing_if = "Option::is_none")]
+    pub org_slug: Option<String>,
 }
 
 impl GalliumTokenRequest {

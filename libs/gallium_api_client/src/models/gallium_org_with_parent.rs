@@ -9,13 +9,8 @@ pub struct GalliumOrgWithParent {
     pub name: String,
     #[serde(rename = "slug")]
     pub slug: String,
-    #[serde(
-        rename = "parentOrg",
-        default,
-        with = "::serde_with::rust::double_option",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub parent_org: Option<Option<Box<models::GalliumOrg>>>,
+    #[serde(rename = "parentOrg", skip_serializing_if = "Option::is_none")]
+    pub parent_org: Option<models::GalliumOrg>,
 }
 
 impl GalliumOrgWithParent {

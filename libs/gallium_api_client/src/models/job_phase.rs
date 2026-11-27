@@ -4,7 +4,7 @@ use crate::models;
 use serde::{Deserialize, Serialize};
 
 ///
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
 pub enum JobPhase {
     #[serde(rename = "Pending")]
     Pending,
@@ -14,6 +14,8 @@ pub enum JobPhase {
     Succeeded,
     #[serde(rename = "Failed")]
     Failed,
+    #[serde(untagged)]
+    UnknownValue(String),
 }
 
 impl std::fmt::Display for JobPhase {
@@ -23,6 +25,7 @@ impl std::fmt::Display for JobPhase {
             Self::Running => write!(f, "Running"),
             Self::Succeeded => write!(f, "Succeeded"),
             Self::Failed => write!(f, "Failed"),
+            Self::UnknownValue(value) => write!(f, "{value}"),
         }
     }
 }

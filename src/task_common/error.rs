@@ -55,6 +55,11 @@ pub enum TaskError {
     #[snafu(display("Command {slug} failed: {cmd_type}"))]
     CommandFailure { slug: String, cmd_type: String },
 
+    #[snafu(display(
+        "Command {slug} has the status {status}, which this version of the CLI does not know"
+    ))]
+    CommandStatusUnknown { slug: String, status: String },
+
     #[snafu(display("Command {slug} failed: {reason}"))]
     CommandFailedWithReason { slug: String, reason: String },
 

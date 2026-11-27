@@ -11,41 +11,16 @@ pub struct JobResult {
     pub lockfile: String,
     #[serde(rename = "outcome")]
     pub outcome: models::JobOutcome,
-    #[serde(
-        rename = "reason",
-        default,
-        with = "::serde_with::rust::double_option",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub reason: Option<Option<String>>,
-    #[serde(
-        rename = "message",
-        default,
-        with = "::serde_with::rust::double_option",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub message: Option<Option<String>>,
-    #[serde(
-        rename = "exitCode",
-        default,
-        with = "::serde_with::rust::double_option",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub exit_code: Option<Option<i32>>,
-    #[serde(
-        rename = "startedAt",
-        default,
-        with = "::serde_with::rust::double_option",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub started_at: Option<Option<chrono::DateTime<chrono::FixedOffset>>>,
-    #[serde(
-        rename = "finishedAt",
-        default,
-        with = "::serde_with::rust::double_option",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub finished_at: Option<Option<chrono::DateTime<chrono::FixedOffset>>>,
+    #[serde(rename = "reason", skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+    #[serde(rename = "message", skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(rename = "exitCode", skip_serializing_if = "Option::is_none")]
+    pub exit_code: Option<i32>,
+    #[serde(rename = "startedAt", skip_serializing_if = "Option::is_none")]
+    pub started_at: Option<chrono::DateTime<chrono::FixedOffset>>,
+    #[serde(rename = "finishedAt", skip_serializing_if = "Option::is_none")]
+    pub finished_at: Option<chrono::DateTime<chrono::FixedOffset>>,
 }
 
 impl JobResult {

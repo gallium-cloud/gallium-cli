@@ -67,11 +67,7 @@ async fn list(global_args: &GlobalArguments, args: &ListArguments) -> Result<(),
 }
 
 fn org_list(response: &GalliumLoginResponse) -> OrgList {
-    let current = response
-        .org
-        .as_ref()
-        .and_then(|org| org.as_ref())
-        .map(|org| org.slug.as_str());
+    let current = response.org.as_ref().map(|org| org.slug.as_str());
     let orgs = response
         .available_orgs
         .iter()
@@ -79,11 +75,7 @@ fn org_list(response: &GalliumLoginResponse) -> OrgList {
         .map(|org| OrgRow {
             slug: org.slug.clone(),
             name: org.name.clone(),
-            parent: org
-                .parent_org
-                .as_ref()
-                .and_then(|parent| parent.as_ref())
-                .map(|parent| parent.slug.clone()),
+            parent: org.parent_org.as_ref().map(|parent| parent.slug.clone()),
             current: current == Some(org.slug.as_str()),
         })
         .collect();

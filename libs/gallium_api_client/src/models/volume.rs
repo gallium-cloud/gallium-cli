@@ -7,40 +7,20 @@ use serde::{Deserialize, Serialize};
 pub struct Volume {
     #[serde(rename = "kubeName")]
     pub kube_name: String,
-    #[serde(
-        rename = "name",
-        default,
-        with = "::serde_with::rust::double_option",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub name: Option<Option<String>>,
-    #[serde(
-        rename = "description",
-        default,
-        with = "::serde_with::rust::double_option",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub description: Option<Option<String>>,
+    #[serde(rename = "name", skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "description", skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
     /// The total size of the volume
     #[serde(rename = "sizeBytes")]
     pub size_bytes: u64,
-    #[serde(
-        rename = "volumeType",
-        default,
-        with = "::serde_with::rust::double_option",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub volume_type: Option<Option<models::VolumeTypeLabel>>,
+    #[serde(rename = "volumeType", skip_serializing_if = "Option::is_none")]
+    pub volume_type: Option<models::VolumeTypeLabel>,
     #[serde(rename = "storageClass")]
     pub storage_class: String,
     /// The amount of data that is actually allocated within the volume (actualSize in longhorn terminology). NOTE: Space free-ed by the OS may not be reliably reclaimed.
-    #[serde(
-        rename = "usedSizeBytes",
-        default,
-        with = "::serde_with::rust::double_option",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub used_size_bytes: Option<Option<u64>>,
+    #[serde(rename = "usedSizeBytes", skip_serializing_if = "Option::is_none")]
+    pub used_size_bytes: Option<u64>,
 }
 
 impl Volume {

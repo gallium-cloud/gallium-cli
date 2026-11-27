@@ -67,7 +67,7 @@ pub async fn scan_volumes_for_export(
                 vm_name: Some(vm.kube_name.clone()),
                 kube_name: vol.kube_name.clone(),
                 size_bytes: vol.size_bytes,
-                used_size_bytes: vol.used_size_bytes.flatten(),
+                used_size_bytes: vol.used_size_bytes,
             });
         }
     }
@@ -86,7 +86,7 @@ pub async fn scan_volumes_for_export(
                 vm_name: None,
                 kube_name: vol.kube_name.clone(),
                 size_bytes: vol.size_bytes,
-                used_size_bytes: vol.used_size_bytes.flatten(),
+                used_size_bytes: vol.used_size_bytes,
             });
         }
     }
@@ -103,7 +103,7 @@ fn match_vm_arg<'a>(
     for vm in vm_list.iter() {
         if vm.kube_name.as_str() == vm_arg {
             return Ok(vm);
-        } else if vm.name.as_ref().and_then(|name| name.as_deref()) == Some(vm_arg) {
+        } else if vm.name.as_deref() == Some(vm_arg) {
             matched_vm = Some(vm);
             matched_count += 1;
         }
@@ -135,7 +135,7 @@ fn match_vol_arg<'a>(vol_arg: &str, vol_list: &'a [Volume]) -> Result<&'a Volume
     for vol in vol_list.iter() {
         if vol.kube_name.as_str() == vol_arg {
             return Ok(vol);
-        } else if vol.name.as_ref().and_then(|name| name.as_deref()) == Some(vol_arg) {
+        } else if vol.name.as_deref() == Some(vol_arg) {
             matched_vol = Some(vol);
             matched_count += 1;
         }

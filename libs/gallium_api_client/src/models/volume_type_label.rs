@@ -4,7 +4,7 @@ use crate::models;
 use serde::{Deserialize, Serialize};
 
 ///
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
 pub enum VolumeTypeLabel {
     #[serde(rename = "TemplateImage")]
     TemplateImage,
@@ -14,6 +14,8 @@ pub enum VolumeTypeLabel {
     UserStorage,
     #[serde(rename = "System")]
     System,
+    #[serde(untagged)]
+    UnknownValue(String),
 }
 
 impl std::fmt::Display for VolumeTypeLabel {
@@ -23,6 +25,7 @@ impl std::fmt::Display for VolumeTypeLabel {
             Self::Iso => write!(f, "Iso"),
             Self::UserStorage => write!(f, "UserStorage"),
             Self::System => write!(f, "System"),
+            Self::UnknownValue(value) => write!(f, "{value}"),
         }
     }
 }

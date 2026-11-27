@@ -6,18 +6,13 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationStatus {
     #[serde(rename = "phase")]
-    pub phase: Box<models::Phase>,
+    pub phase: models::Phase,
     #[serde(rename = "observedAt")]
     pub observed_at: chrono::DateTime<chrono::FixedOffset>,
     #[serde(rename = "stagedChanges")]
-    pub staged_changes: Box<models::StagedChanges>,
-    #[serde(
-        rename = "runningLockfile",
-        default,
-        with = "::serde_with::rust::double_option",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub running_lockfile: Option<Option<Box<models::LockfileMetadata>>>,
+    pub staged_changes: models::StagedChanges,
+    #[serde(rename = "runningLockfile", skip_serializing_if = "Option::is_none")]
+    pub running_lockfile: Option<models::LockfileMetadata>,
     #[serde(rename = "orphanedSecrets")]
     pub orphaned_secrets: Vec<String>,
     #[serde(rename = "volumes")]
@@ -41,9 +36,9 @@ impl ApplicationStatus {
         containers: Vec<models::ContainerStatus>,
     ) -> ApplicationStatus {
         ApplicationStatus {
-            phase: Box::new(phase),
+            phase,
             observed_at,
-            staged_changes: Box::new(staged_changes),
+            staged_changes,
             running_lockfile: None,
             orphaned_secrets,
             volumes,

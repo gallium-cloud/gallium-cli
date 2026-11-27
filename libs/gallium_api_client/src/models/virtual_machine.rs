@@ -7,20 +7,10 @@ use serde::{Deserialize, Serialize};
 pub struct VirtualMachine {
     #[serde(rename = "kubeName")]
     pub kube_name: String,
-    #[serde(
-        rename = "name",
-        default,
-        with = "::serde_with::rust::double_option",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub name: Option<Option<String>>,
-    #[serde(
-        rename = "description",
-        default,
-        with = "::serde_with::rust::double_option",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub description: Option<Option<String>>,
+    #[serde(rename = "name", skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "description", skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
     #[serde(rename = "interfaces")]
     pub interfaces: Vec<models::VmNetworkInterfaceConfiguration>,
     #[serde(rename = "volumes")]

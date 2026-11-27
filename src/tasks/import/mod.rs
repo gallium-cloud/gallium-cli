@@ -135,11 +135,11 @@ async fn process(
 
     let req = VolumeNbdImportRequest {
         csr_base64: mtls_helper.get_csr_base64().context(HelperCommandSnafu)?,
-        volume_description: Some(Some(description(&source.name_part))),
+        volume_description: Some(description(&source.name_part)),
         volume_size_gb: source.virtual_size_gb_round_up()?,
         volume_storage_class: disk_pool.kube_name.clone(),
-        volume_name: Some(Some(truncate_name(&source.name_part))),
-        import_source_file_name: Some(Some(source.name_part.clone())),
+        volume_name: Some(truncate_name(&source.name_part)),
+        import_source_file_name: Some(source.name_part.clone()),
     };
 
     let submit_resp = cluster_volume_api::import_nbd_volume(

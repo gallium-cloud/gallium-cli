@@ -29,7 +29,7 @@ pub async fn password_login(args: &GlobalArguments) -> Result<GalliumLoginRespon
                 .with_prompt("one-time password from your authenticator")
                 .interact_text()
                 .context(UserInputInvalidSnafu { field: "otp" })?;
-            login_request.otp = Some(Some(otp));
+            login_request.otp = Some(otp);
         } else {
             return Ok(resp);
         }

@@ -50,7 +50,7 @@ async fn main() -> Result<(), TaskError> {
                 Err(e) => return Err(e),
             };
             let login_resp = api_client.refresh_session().await?;
-            if let Some(org) = login_resp.org.flatten() {
+            if let Some(org) = login_resp.org {
                 println!("Logged in to Gallium org: {}", org.name);
             }
             if let Some(avail_orgs) = login_resp.available_orgs

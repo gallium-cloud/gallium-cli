@@ -7,22 +7,12 @@ use serde::{Deserialize, Serialize};
 pub struct GalliumLoginResponse {
     #[serde(rename = "accessToken", skip_serializing_if = "Option::is_none")]
     pub access_token: Option<String>,
-    #[serde(
-        rename = "refreshToken",
-        default,
-        with = "::serde_with::rust::double_option",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub refresh_token: Option<Option<String>>,
-    #[serde(
-        rename = "org",
-        default,
-        with = "::serde_with::rust::double_option",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub org: Option<Option<Box<models::GalliumOrgWithParent>>>,
+    #[serde(rename = "refreshToken", skip_serializing_if = "Option::is_none")]
+    pub refresh_token: Option<String>,
+    #[serde(rename = "org", skip_serializing_if = "Option::is_none")]
+    pub org: Option<models::GalliumOrgWithParent>,
     #[serde(rename = "user", skip_serializing_if = "Option::is_none")]
-    pub user: Option<Box<models::GalliumUser>>,
+    pub user: Option<models::GalliumUser>,
     #[serde(rename = "availableOrgs", skip_serializing_if = "Option::is_none")]
     pub available_orgs: Option<Vec<models::GalliumOrgWithParent>>,
     #[serde(rename = "mfaRequired")]

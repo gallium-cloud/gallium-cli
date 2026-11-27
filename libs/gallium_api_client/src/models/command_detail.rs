@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CommandDetail {
     #[serde(rename = "summary", skip_serializing_if = "Option::is_none")]
-    pub summary: Option<Box<models::CommandSummary>>,
+    pub summary: Option<models::CommandSummary>,
 }
 
 impl CommandDetail {

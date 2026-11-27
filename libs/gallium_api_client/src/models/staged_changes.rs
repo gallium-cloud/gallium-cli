@@ -10,11 +10,11 @@ pub struct StagedChanges {
     #[serde(rename = "document")]
     pub document: bool,
     #[serde(rename = "inputs")]
-    pub inputs: Box<models::ChangeCounts>,
+    pub inputs: models::ChangeCounts,
     #[serde(rename = "files")]
-    pub files: Box<models::ChangeCounts>,
+    pub files: models::ChangeCounts,
     #[serde(rename = "ingresses")]
-    pub ingresses: Box<models::ChangeCounts>,
+    pub ingresses: models::ChangeCounts,
 }
 
 impl StagedChanges {
@@ -28,9 +28,9 @@ impl StagedChanges {
         StagedChanges {
             any,
             document,
-            inputs: Box::new(inputs),
-            files: Box::new(files),
-            ingresses: Box::new(ingresses),
+            inputs,
+            files,
+            ingresses,
         }
     }
 }

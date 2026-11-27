@@ -17,20 +17,10 @@ pub struct ApplicationListItem {
     /// An identifier that uniquely identifies an event, user, resource object, etc in Gallium's platform.
     #[serde(rename = "applicationId")]
     pub application_id: String,
-    #[serde(
-        rename = "phase",
-        default,
-        with = "::serde_with::rust::double_option",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub phase: Option<Option<Box<models::Phase>>>,
-    #[serde(
-        rename = "observedAt",
-        default,
-        with = "::serde_with::rust::double_option",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub observed_at: Option<Option<chrono::DateTime<chrono::FixedOffset>>>,
+    #[serde(rename = "phase", skip_serializing_if = "Option::is_none")]
+    pub phase: Option<models::Phase>,
+    #[serde(rename = "observedAt", skip_serializing_if = "Option::is_none")]
+    pub observed_at: Option<chrono::DateTime<chrono::FixedOffset>>,
     #[serde(rename = "syncedAt")]
     pub synced_at: chrono::DateTime<chrono::FixedOffset>,
 }

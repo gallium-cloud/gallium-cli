@@ -831,6 +831,7 @@ name = "gallium_api_client"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "percent-encoding",
  "reqwest",
  "reqwest-middleware",
  "serde",

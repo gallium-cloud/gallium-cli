@@ -4,7 +4,7 @@ use crate::models;
 use serde::{Deserialize, Serialize};
 
 ///
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
 pub enum ApiCmdStatus {
     #[serde(rename = "PENDING")]
     Pending,
@@ -14,6 +14,8 @@ pub enum ApiCmdStatus {
     Complete,
     #[serde(rename = "FAILED")]
     Failed,
+    #[serde(untagged)]
+    UnknownValue(String),
 }
 
 impl std::fmt::Display for ApiCmdStatus {
@@ -23,6 +25,7 @@ impl std::fmt::Display for ApiCmdStatus {
             Self::InProgress => write!(f, "IN_PROGRESS"),
             Self::Complete => write!(f, "COMPLETE"),
             Self::Failed => write!(f, "FAILED"),
+            Self::UnknownValue(value) => write!(f, "{value}"),
         }
     }
 }

@@ -8,14 +8,11 @@ pub struct EngineStatus {
     #[serde(rename = "online")]
     pub online: bool,
     #[serde(rename = "status")]
-    pub status: Box<models::EngineState>,
+    pub status: models::EngineState,
 }
 
 impl EngineStatus {
     pub fn new(online: bool, status: models::EngineState) -> EngineStatus {
-        EngineStatus {
-            online,
-            status: Box::new(status),
-        }
+        EngineStatus { online, status }
     }
 }

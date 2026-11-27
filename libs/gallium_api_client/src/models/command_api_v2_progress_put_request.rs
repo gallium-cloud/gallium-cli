@@ -5,34 +5,14 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CommandApiV2ProgressPutRequest {
-    #[serde(
-        rename = "status",
-        default,
-        with = "::serde_with::rust::double_option",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub status: Option<Option<models::ApiCmdStatus>>,
-    #[serde(
-        rename = "progressCurrent",
-        default,
-        with = "::serde_with::rust::double_option",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub progress_current: Option<Option<f64>>,
-    #[serde(
-        rename = "progressTotal",
-        default,
-        with = "::serde_with::rust::double_option",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub progress_total: Option<Option<f64>>,
-    #[serde(
-        rename = "progressMessage",
-        default,
-        with = "::serde_with::rust::double_option",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub progress_message: Option<Option<String>>,
+    #[serde(rename = "status", skip_serializing_if = "Option::is_none")]
+    pub status: Option<models::ApiCmdStatus>,
+    #[serde(rename = "progressCurrent", skip_serializing_if = "Option::is_none")]
+    pub progress_current: Option<f64>,
+    #[serde(rename = "progressTotal", skip_serializing_if = "Option::is_none")]
+    pub progress_total: Option<f64>,
+    #[serde(rename = "progressMessage", skip_serializing_if = "Option::is_none")]
+    pub progress_message: Option<String>,
 }
 
 impl CommandApiV2ProgressPutRequest {

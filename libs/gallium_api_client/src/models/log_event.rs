@@ -23,10 +23,12 @@ impl LogEvent {
     }
 }
 ///
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
 pub enum Type {
     #[serde(rename = "line")]
     Line,
+    #[serde(untagged)]
+    UnknownValue(String),
 }
 
 impl Default for Type {

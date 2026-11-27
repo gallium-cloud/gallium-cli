@@ -4,7 +4,7 @@ use crate::models;
 use serde::{Deserialize, Serialize};
 
 ///
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
 pub enum ContainerInstanceState {
     #[serde(rename = "waiting")]
     Waiting,
@@ -12,6 +12,8 @@ pub enum ContainerInstanceState {
     Running,
     #[serde(rename = "terminated")]
     Terminated,
+    #[serde(untagged)]
+    UnknownValue(String),
 }
 
 impl std::fmt::Display for ContainerInstanceState {
@@ -20,6 +22,7 @@ impl std::fmt::Display for ContainerInstanceState {
             Self::Waiting => write!(f, "waiting"),
             Self::Running => write!(f, "running"),
             Self::Terminated => write!(f, "terminated"),
+            Self::UnknownValue(value) => write!(f, "{value}"),
         }
     }
 }

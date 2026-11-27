@@ -4,7 +4,7 @@ use crate::models;
 use serde::{Deserialize, Serialize};
 
 ///
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
 pub enum ConditionStatus {
     #[serde(rename = "True")]
     True,
@@ -12,6 +12,8 @@ pub enum ConditionStatus {
     False,
     #[serde(rename = "Unknown")]
     Unknown,
+    #[serde(untagged)]
+    UnknownValue(String),
 }
 
 impl std::fmt::Display for ConditionStatus {
@@ -20,6 +22,7 @@ impl std::fmt::Display for ConditionStatus {
             Self::True => write!(f, "True"),
             Self::False => write!(f, "False"),
             Self::Unknown => write!(f, "Unknown"),
+            Self::UnknownValue(value) => write!(f, "{value}"),
         }
     }
 }

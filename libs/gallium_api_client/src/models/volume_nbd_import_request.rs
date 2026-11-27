@@ -11,27 +11,15 @@ pub struct VolumeNbdImportRequest {
     pub volume_size_gb: u32,
     #[serde(rename = "volumeStorageClass")]
     pub volume_storage_class: String,
-    #[serde(
-        rename = "volume_name",
-        default,
-        with = "::serde_with::rust::double_option",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub volume_name: Option<Option<String>>,
-    #[serde(
-        rename = "volumeDescription",
-        default,
-        with = "::serde_with::rust::double_option",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub volume_description: Option<Option<String>>,
+    #[serde(rename = "volume_name", skip_serializing_if = "Option::is_none")]
+    pub volume_name: Option<String>,
+    #[serde(rename = "volumeDescription", skip_serializing_if = "Option::is_none")]
+    pub volume_description: Option<String>,
     #[serde(
         rename = "importSourceFileName",
-        default,
-        with = "::serde_with::rust::double_option",
         skip_serializing_if = "Option::is_none"
     )]
-    pub import_source_file_name: Option<Option<String>>,
+    pub import_source_file_name: Option<String>,
 }
 
 impl VolumeNbdImportRequest {

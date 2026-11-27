@@ -4,7 +4,7 @@ use crate::models;
 use serde::{Deserialize, Serialize};
 
 ///
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
 pub enum VirtualMachineStatus {
     #[serde(rename = "Stopped")]
     Stopped,
@@ -26,6 +26,8 @@ pub enum VirtualMachineStatus {
     Unknown,
     #[serde(rename = "Error")]
     Error,
+    #[serde(untagged)]
+    UnknownValue(String),
 }
 
 impl std::fmt::Display for VirtualMachineStatus {
@@ -41,6 +43,7 @@ impl std::fmt::Display for VirtualMachineStatus {
             Self::Migrating => write!(f, "Migrating"),
             Self::Unknown => write!(f, "Unknown"),
             Self::Error => write!(f, "Error"),
+            Self::UnknownValue(value) => write!(f, "{value}"),
         }
     }
 }

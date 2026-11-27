@@ -11,13 +11,8 @@ pub struct CmdSubmitResponse {
     pub message: String,
     #[serde(rename = "cmdType")]
     pub cmd_type: String,
-    #[serde(
-        rename = "targetEntity",
-        default,
-        with = "::serde_with::rust::double_option",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub target_entity: Option<Option<Box<models::CmdEntity>>>,
+    #[serde(rename = "targetEntity", skip_serializing_if = "Option::is_none")]
+    pub target_entity: Option<models::CmdEntity>,
     #[serde(rename = "subCommands")]
     pub sub_commands: Vec<models::SubCommand>,
 }

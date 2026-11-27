@@ -9,13 +9,8 @@ pub struct ContainerLogs {
     pub observed_at: chrono::DateTime<chrono::FixedOffset>,
     #[serde(rename = "container")]
     pub container: String,
-    #[serde(
-        rename = "instance",
-        default,
-        with = "::serde_with::rust::double_option",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub instance: Option<Option<String>>,
+    #[serde(rename = "instance", skip_serializing_if = "Option::is_none")]
+    pub instance: Option<String>,
     #[serde(rename = "events")]
     pub events: Vec<models::LogEvent>,
 }

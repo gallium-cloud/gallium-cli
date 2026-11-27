@@ -38,8 +38,8 @@ impl CommandProgressUpdater {
     pub fn update_progress(&self, current: f64, total: f64) {
         self.tx
             .try_send(CommandApiV2ProgressPutRequest {
-                progress_current: Some(Some(current)),
-                progress_total: Some(Some(total)),
+                progress_current: Some(current),
+                progress_total: Some(total),
                 progress_message: None,
                 status: None,
             })
@@ -54,7 +54,7 @@ impl CommandProgressUpdater {
                 progress_current: None,
                 progress_message: None,
                 progress_total: None,
-                status: Some(Some(status)),
+                status: Some(status),
             },
         )
         .await?;

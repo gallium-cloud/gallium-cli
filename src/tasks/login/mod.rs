@@ -19,11 +19,12 @@ pub(crate) async fn login(
         LoginMethod::Password => password_login(global_args).await?,
     };
 
-    let refresh_token = login_response.refresh_token.flatten().ok_or_else(|| {
-        TaskError::ApiResponseMissingField {
-            field: "refreshToken",
-        }
-    })?;
+    let refresh_token =
+        login_response
+            .refresh_token
+            .ok_or_else(|| TaskError::ApiResponseMissingField {
+                field: "refreshToken",
+            })?;
 
     let mut dotfile = read_dotfile().await?;
     dotfile
@@ -31,7 +32,7 @@ pub(crate) async fn login(
         .insert(global_args.get_api_url().to_string(), refresh_token);
     write_dotfile(&dotfile).await?;
 
-    match login_response.org.flatten() {
+    match login_response.org {
         Some(org) => println!("Logged in to Gallium org: {}", org.name),
         None => println!("Logged in."),
     }
