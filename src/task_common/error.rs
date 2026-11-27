@@ -55,6 +55,12 @@ pub enum TaskError {
     #[snafu(display("Command {slug} failed: {cmd_type}"))]
     CommandFailure { slug: String, cmd_type: String },
 
+    #[snafu(display("Command {slug} failed: {reason}"))]
+    CommandFailedWithReason { slug: String, reason: String },
+
+    #[snafu(display("Command {slug} did not finish within {seconds} seconds"))]
+    CommandTimedOut { slug: String, seconds: u64 },
+
     #[snafu(display("Command response for {cmd_type} missing or invalid"))]
     CommandResponseMissingOrInvalid {
         cmd_type: String,

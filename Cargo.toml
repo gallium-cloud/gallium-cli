@@ -70,6 +70,7 @@ unicode-segmentation = "1.13"
 url = { version = "2" }
 which = "8"
 x509-parser = "0.18.1"
+yaml-rust2 = { version = "0.13", default-features = false }
 
 
 [build-dependencies]

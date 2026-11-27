@@ -58,6 +58,19 @@ pub fn render_list<T: Serialize>(
     Ok(())
 }
 
+pub fn render_result<T: Serialize>(
+    response: &T,
+    message: &str,
+    args: &OutputArgs,
+) -> Result<(), TaskError> {
+    let text = match args.output {
+        OutputFormat::Text => message.to_string(),
+        OutputFormat::Json => to_json(&to_value(response)?)?,
+    };
+    println!("{text}");
+    Ok(())
+}
+
 pub enum View {
     List {
         items: &'static str,

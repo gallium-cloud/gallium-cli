@@ -9,3 +9,4 @@ pub mod nbd;
 pub mod output;
 pub mod qemu;
 pub mod ui;
+pub mod yaml;
