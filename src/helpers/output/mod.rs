@@ -367,4 +367,33 @@ mod tests {
         assert_eq!(empty.text(Utc::now())?, "");
         Ok(())
     }
+
+    static HOSTS: Section = Section {
+        name: None,
+        title: None,
+        view: View::List {
+            items: "",
+            columns: &[Column {
+                header: "NAME",
+                pointer: "/name",
+                format: Format::Text,
+            }],
+        },
+    };
+
+    #[test]
+    fn top_level_array() -> Result<(), TaskError> {
+        let mut report = Report::new(&ARGS);
+        report.add(
+            &HOSTS,
+            &json!([{ "name": "edge-syd-01" }, { "name": "lab" }]),
+        )?;
+
+        assert_eq!(report.text(Utc::now())?, "NAME\nedge-syd-01\nlab");
+        assert_eq!(
+            report.json(),
+            json!([{ "name": "edge-syd-01" }, { "name": "lab" }])
+        );
+        Ok(())
+    }
 }
