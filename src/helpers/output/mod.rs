@@ -209,3 +209,77 @@ fn age(timestamp: &str, now: DateTime<Utc>) -> Option<String> {
     let elapsed = now.signed_duration_since(then).to_std().unwrap_or_default();
     Some(format!("{:#} ago", HumanDuration(elapsed)))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    static STATUS: Section = Section {
+        name: Some("status"),
+        title: None,
+        view: View::Detail {
+            fields: &[Field {
+                label: "Online",
+                pointer: "/online",
+                format: Format::Boolean,
+            }],
+        },
+    };
+
+    static APPS: Section = Section {
+        name: Some("apps"),
+        title: Some("Apps"),
+        view: View::List {
+            items: "/items",
+            columns: &[Column {
+                header: "NAME",
+                pointer: "/name",
+                format: Format::Text,
+            }],
+        },
+    };
+
+    static UNNAMED: Section = Section {
+        name: None,
+        title: None,
+        view: View::Detail { fields: &[] },
+    };
+
+    const ARGS: OutputArgs = OutputArgs {
+        output: OutputFormat::Text,
+    };
+
+    #[test]
+    fn sections_print_in_order_with_titles() {
+        let mut report = Report::new(&ARGS);
+        report.add(&STATUS, &json!({ "online": true })).unwrap();
+        report
+            .add(&APPS, &json!({ "items": [{ "name": "wiki" }] }))
+            .unwrap();
+
+        let text = report.text(Utc::now()).unwrap();
+
+        assert_eq!(text, "Online:  yes\n\nApps:\nNAME\nwiki");
+    }
+
+    #[test]
+    fn json_output_keys_by_section() {
+        let mut report = Report::new(&ARGS);
+        report.add(&STATUS, &json!({ "online": true })).unwrap();
+        report.add(&APPS, &json!({ "items": [] })).unwrap();
+
+        assert_eq!(
+            report.json(),
+            json!({ "status": { "online": true }, "apps": { "items": [] } })
+        );
+    }
+
+    #[test]
+    fn json_output_one_section() {
+        let mut report = Report::new(&ARGS);
+        report.add(&UNNAMED, &json!({ "online": true })).unwrap();
+
+        assert_eq!(report.json(), json!({ "online": true }));
+    }
+}
