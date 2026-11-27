@@ -79,6 +79,10 @@ pub enum View {
     Detail {
         fields: &'static [Field],
     },
+    Lines {
+        items: &'static str,
+        pointer: &'static str,
+    },
 }
 
 pub struct Section {
@@ -136,7 +140,9 @@ impl<'a> Report<'a> {
             OutputFormat::Text => self.text(Utc::now())?,
             OutputFormat::Json => to_json(&self.json())?,
         };
-        println!("{text}");
+        if !text.is_empty() {
+            println!("{text}");
+        }
         Ok(())
     }
 
@@ -149,6 +155,7 @@ impl<'a> Report<'a> {
                         list_text(&response.value, items, columns, now)?
                     }
                     View::Detail { fields } => detail_text(&response.value, fields, now),
+                    View::Lines { items, pointer } => lines_text(&response.value, items, pointer)?,
                 };
                 parts.push(match section.title {
                     Some(title) => format!("{title}:\n{body}"),
@@ -202,6 +209,21 @@ fn list_text(
         );
     }
     Ok(table_text(table))
+}
+
+fn lines_text(response: &Value, items: &str, pointer: &str) -> Result<String, TaskError> {
+    let Some(items) = response.pointer(items).and_then(Value::as_array) else {
+        whatever!("API response has no list at {items}");
+    };
+    Ok(items
+        .iter()
+        .map(|item| match item.pointer(pointer) {
+            Some(Value::String(text)) => text.clone(),
+            Some(other) => other.to_string(),
+            None => String::new(),
+        })
+        .collect::<Vec<_>>()
+        .join("\n"))
 }
 
 fn detail_text(response: &Value, fields: &[Field], now: DateTime<Utc>) -> String {

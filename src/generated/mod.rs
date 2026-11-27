@@ -6,6 +6,7 @@ use crate::task_common::error::TaskError;
 pub mod app_deploy;
 pub mod app_get;
 pub mod app_list;
+pub mod app_logs;
 pub mod app_new;
 pub mod engine_status;
 
@@ -30,6 +31,8 @@ pub enum AppCommand {
     Deploy(app_deploy::Args),
     /// Show a container engine app
     Get(app_get::Args),
+    /// Print the logs for an app's container
+    Logs(app_logs::Args),
     /// Create a new container engine app
     #[command(visible_alias = "create")]
     New(app_new::Args),
@@ -47,6 +50,7 @@ pub async fn run(global_args: &GlobalArguments, action: GeneratedAction) -> Resu
             AppCommand::List(args) => app_list::run(global_args, args).await,
             AppCommand::Deploy(args) => app_deploy::run(global_args, args).await,
             AppCommand::Get(args) => app_get::run(global_args, args).await,
+            AppCommand::Logs(args) => app_logs::run(global_args, args).await,
             AppCommand::New(args) => app_new::run(global_args, args).await,
         },
         GeneratedAction::Engine(command) => match command {
