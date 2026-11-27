@@ -8,6 +8,7 @@ pub mod app_get;
 pub mod app_list;
 pub mod app_logs;
 pub mod app_new;
+pub mod engine_list;
 pub mod engine_status;
 
 #[derive(clap::Subcommand)]
@@ -40,6 +41,8 @@ pub enum AppCommand {
 
 #[derive(clap::Subcommand)]
 pub enum EngineCommand {
+    /// List the container engines in your Gallium org
+    List(engine_list::Args),
     /// Show the status of a container engine
     Status(engine_status::Args),
 }
@@ -54,6 +57,7 @@ pub async fn run(global_args: &GlobalArguments, action: GeneratedAction) -> Resu
             AppCommand::New(args) => app_new::run(global_args, args).await,
         },
         GeneratedAction::Engine(command) => match command {
+            EngineCommand::List(args) => engine_list::run(global_args, args).await,
             EngineCommand::Status(args) => engine_status::run(global_args, args).await,
         },
     }
