@@ -16,6 +16,18 @@ pub enum CreateApplicationError {
     UnknownValue(serde_json::Value),
 }
 
+/// struct for typed errors of method [`delete_application`]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum DeleteApplicationError {
+    Status400(models::AppErrorResponseBody),
+    Status500(models::AppErrorResponseBody),
+    Status404(models::AppErrorResponseBody),
+    Status409(),
+    DefaultResponse(models::ApiError),
+    UnknownValue(serde_json::Value),
+}
+
 /// struct for typed errors of method [`deploy`]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
@@ -23,6 +35,18 @@ pub enum DeployError {
     Status400(models::AppErrorResponseBody),
     Status500(models::AppErrorResponseBody),
     Status404(models::AppErrorResponseBody),
+    DefaultResponse(models::ApiError),
+    UnknownValue(serde_json::Value),
+}
+
+/// struct for typed errors of method [`discard_staged_changes`]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum DiscardStagedChangesError {
+    Status400(),
+    Status500(models::AppErrorResponseBody),
+    Status404(models::AppErrorResponseBody),
+    Status409(),
     DefaultResponse(models::ApiError),
     UnknownValue(serde_json::Value),
 }
@@ -45,6 +69,42 @@ pub enum ListAllApplicationsError {
     Status400(models::AppErrorResponseBody),
     Status500(models::AppErrorResponseBody),
     Status404(models::AppErrorResponseBody),
+    DefaultResponse(models::ApiError),
+    UnknownValue(serde_json::Value),
+}
+
+/// struct for typed errors of method [`restart_container`]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum RestartContainerError {
+    Status400(models::AppErrorResponseBody),
+    Status500(models::AppErrorResponseBody),
+    Status404(models::AppErrorResponseBody),
+    Status409(),
+    DefaultResponse(models::ApiError),
+    UnknownValue(serde_json::Value),
+}
+
+/// struct for typed errors of method [`start_application`]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum StartApplicationError {
+    Status400(models::AppErrorResponseBody),
+    Status500(models::AppErrorResponseBody),
+    Status404(models::AppErrorResponseBody),
+    Status409(),
+    DefaultResponse(models::ApiError),
+    UnknownValue(serde_json::Value),
+}
+
+/// struct for typed errors of method [`stop_application`]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum StopApplicationError {
+    Status400(models::AppErrorResponseBody),
+    Status500(models::AppErrorResponseBody),
+    Status404(models::AppErrorResponseBody),
+    Status409(),
     DefaultResponse(models::ApiError),
     UnknownValue(serde_json::Value),
 }
@@ -120,6 +180,69 @@ pub async fn create_application(
     }
 }
 
+pub async fn delete_application(
+    configuration: &configuration::Configuration,
+    engine_slug: &str,
+    app_name: &str,
+) -> Result<models::SagaSubmitted, Error<DeleteApplicationError>> {
+    // add a prefix to parameters to efficiently prevent name collisions
+    let p_path_engine_slug = engine_slug;
+    let p_path_app_name = app_name;
+
+    let uri_str = format!(
+        "{}/api/ce/{engineSlug}/applications/{appName}",
+        configuration.base_path,
+        engineSlug = crate::apis::urlencode(p_path_engine_slug),
+        appName = crate::apis::urlencode(p_path_app_name)
+    );
+    let mut req_builder = configuration
+        .client
+        .request(reqwest::Method::DELETE, &uri_str);
+
+    if let Some(ref user_agent) = configuration.user_agent {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
+    }
+    if let Some(ref token) = configuration.bearer_access_token {
+        req_builder = req_builder.bearer_auth(token.to_owned());
+    };
+
+    let req = req_builder.build()?;
+    let resp = configuration.client.execute(req).await?;
+
+    let status = resp.status();
+    let content_type = resp
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("application/octet-stream");
+    let content_type = super::ContentType::from(content_type);
+
+    if !status.is_client_error() && !status.is_server_error() {
+        let content = resp.text().await?;
+        match content_type {
+            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
+            ContentType::Text => {
+                return Err(Error::from(serde_json::Error::custom(
+                    "Received `text/plain` content type response that cannot be converted to `models::SagaSubmitted`",
+                )));
+            }
+            ContentType::Unsupported(unknown_type) => {
+                return Err(Error::from(serde_json::Error::custom(format!(
+                    "Received `{unknown_type}` content type response that cannot be converted to `models::SagaSubmitted`"
+                ))));
+            }
+        }
+    } else {
+        let content = resp.text().await?;
+        let entity: Option<DeleteApplicationError> = serde_json::from_str(&content).ok();
+        Err(Error::ResponseError(ResponseContent {
+            status,
+            content,
+            entity,
+        }))
+    }
+}
+
 pub async fn deploy(
     configuration: &configuration::Configuration,
     engine_slug: &str,
@@ -175,6 +298,69 @@ pub async fn deploy(
     } else {
         let content = resp.text().await?;
         let entity: Option<DeployError> = serde_json::from_str(&content).ok();
+        Err(Error::ResponseError(ResponseContent {
+            status,
+            content,
+            entity,
+        }))
+    }
+}
+
+pub async fn discard_staged_changes(
+    configuration: &configuration::Configuration,
+    engine_slug: &str,
+    app_name: &str,
+) -> Result<models::SagaSubmitted, Error<DiscardStagedChangesError>> {
+    // add a prefix to parameters to efficiently prevent name collisions
+    let p_path_engine_slug = engine_slug;
+    let p_path_app_name = app_name;
+
+    let uri_str = format!(
+        "{}/api/ce/{engineSlug}/applications/{appName}/discard",
+        configuration.base_path,
+        engineSlug = crate::apis::urlencode(p_path_engine_slug),
+        appName = crate::apis::urlencode(p_path_app_name)
+    );
+    let mut req_builder = configuration
+        .client
+        .request(reqwest::Method::POST, &uri_str);
+
+    if let Some(ref user_agent) = configuration.user_agent {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
+    }
+    if let Some(ref token) = configuration.bearer_access_token {
+        req_builder = req_builder.bearer_auth(token.to_owned());
+    };
+
+    let req = req_builder.build()?;
+    let resp = configuration.client.execute(req).await?;
+
+    let status = resp.status();
+    let content_type = resp
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("application/octet-stream");
+    let content_type = super::ContentType::from(content_type);
+
+    if !status.is_client_error() && !status.is_server_error() {
+        let content = resp.text().await?;
+        match content_type {
+            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
+            ContentType::Text => {
+                return Err(Error::from(serde_json::Error::custom(
+                    "Received `text/plain` content type response that cannot be converted to `models::SagaSubmitted`",
+                )));
+            }
+            ContentType::Unsupported(unknown_type) => {
+                return Err(Error::from(serde_json::Error::custom(format!(
+                    "Received `{unknown_type}` content type response that cannot be converted to `models::SagaSubmitted`"
+                ))));
+            }
+        }
+    } else {
+        let content = resp.text().await?;
+        let entity: Option<DiscardStagedChangesError> = serde_json::from_str(&content).ok();
         Err(Error::ResponseError(ResponseContent {
             status,
             content,
@@ -300,6 +486,198 @@ pub async fn list_all_applications(
     } else {
         let content = resp.text().await?;
         let entity: Option<ListAllApplicationsError> = serde_json::from_str(&content).ok();
+        Err(Error::ResponseError(ResponseContent {
+            status,
+            content,
+            entity,
+        }))
+    }
+}
+
+pub async fn restart_container(
+    configuration: &configuration::Configuration,
+    engine_slug: &str,
+    app_name: &str,
+    container_name: &str,
+) -> Result<models::SagaSubmitted, Error<RestartContainerError>> {
+    // add a prefix to parameters to efficiently prevent name collisions
+    let p_path_engine_slug = engine_slug;
+    let p_path_app_name = app_name;
+    let p_path_container_name = container_name;
+
+    let uri_str = format!(
+        "{}/api/ce/{engineSlug}/applications/{appName}/containers/{containerName}/restart",
+        configuration.base_path,
+        engineSlug = crate::apis::urlencode(p_path_engine_slug),
+        appName = crate::apis::urlencode(p_path_app_name),
+        containerName = crate::apis::urlencode(p_path_container_name)
+    );
+    let mut req_builder = configuration
+        .client
+        .request(reqwest::Method::POST, &uri_str);
+
+    if let Some(ref user_agent) = configuration.user_agent {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
+    }
+    if let Some(ref token) = configuration.bearer_access_token {
+        req_builder = req_builder.bearer_auth(token.to_owned());
+    };
+
+    let req = req_builder.build()?;
+    let resp = configuration.client.execute(req).await?;
+
+    let status = resp.status();
+    let content_type = resp
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("application/octet-stream");
+    let content_type = super::ContentType::from(content_type);
+
+    if !status.is_client_error() && !status.is_server_error() {
+        let content = resp.text().await?;
+        match content_type {
+            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
+            ContentType::Text => {
+                return Err(Error::from(serde_json::Error::custom(
+                    "Received `text/plain` content type response that cannot be converted to `models::SagaSubmitted`",
+                )));
+            }
+            ContentType::Unsupported(unknown_type) => {
+                return Err(Error::from(serde_json::Error::custom(format!(
+                    "Received `{unknown_type}` content type response that cannot be converted to `models::SagaSubmitted`"
+                ))));
+            }
+        }
+    } else {
+        let content = resp.text().await?;
+        let entity: Option<RestartContainerError> = serde_json::from_str(&content).ok();
+        Err(Error::ResponseError(ResponseContent {
+            status,
+            content,
+            entity,
+        }))
+    }
+}
+
+pub async fn start_application(
+    configuration: &configuration::Configuration,
+    engine_slug: &str,
+    app_name: &str,
+) -> Result<models::SagaSubmitted, Error<StartApplicationError>> {
+    // add a prefix to parameters to efficiently prevent name collisions
+    let p_path_engine_slug = engine_slug;
+    let p_path_app_name = app_name;
+
+    let uri_str = format!(
+        "{}/api/ce/{engineSlug}/applications/{appName}/start",
+        configuration.base_path,
+        engineSlug = crate::apis::urlencode(p_path_engine_slug),
+        appName = crate::apis::urlencode(p_path_app_name)
+    );
+    let mut req_builder = configuration
+        .client
+        .request(reqwest::Method::POST, &uri_str);
+
+    if let Some(ref user_agent) = configuration.user_agent {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
+    }
+    if let Some(ref token) = configuration.bearer_access_token {
+        req_builder = req_builder.bearer_auth(token.to_owned());
+    };
+
+    let req = req_builder.build()?;
+    let resp = configuration.client.execute(req).await?;
+
+    let status = resp.status();
+    let content_type = resp
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("application/octet-stream");
+    let content_type = super::ContentType::from(content_type);
+
+    if !status.is_client_error() && !status.is_server_error() {
+        let content = resp.text().await?;
+        match content_type {
+            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
+            ContentType::Text => {
+                return Err(Error::from(serde_json::Error::custom(
+                    "Received `text/plain` content type response that cannot be converted to `models::SagaSubmitted`",
+                )));
+            }
+            ContentType::Unsupported(unknown_type) => {
+                return Err(Error::from(serde_json::Error::custom(format!(
+                    "Received `{unknown_type}` content type response that cannot be converted to `models::SagaSubmitted`"
+                ))));
+            }
+        }
+    } else {
+        let content = resp.text().await?;
+        let entity: Option<StartApplicationError> = serde_json::from_str(&content).ok();
+        Err(Error::ResponseError(ResponseContent {
+            status,
+            content,
+            entity,
+        }))
+    }
+}
+
+pub async fn stop_application(
+    configuration: &configuration::Configuration,
+    engine_slug: &str,
+    app_name: &str,
+) -> Result<models::SagaSubmitted, Error<StopApplicationError>> {
+    // add a prefix to parameters to efficiently prevent name collisions
+    let p_path_engine_slug = engine_slug;
+    let p_path_app_name = app_name;
+
+    let uri_str = format!(
+        "{}/api/ce/{engineSlug}/applications/{appName}/stop",
+        configuration.base_path,
+        engineSlug = crate::apis::urlencode(p_path_engine_slug),
+        appName = crate::apis::urlencode(p_path_app_name)
+    );
+    let mut req_builder = configuration
+        .client
+        .request(reqwest::Method::POST, &uri_str);
+
+    if let Some(ref user_agent) = configuration.user_agent {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
+    }
+    if let Some(ref token) = configuration.bearer_access_token {
+        req_builder = req_builder.bearer_auth(token.to_owned());
+    };
+
+    let req = req_builder.build()?;
+    let resp = configuration.client.execute(req).await?;
+
+    let status = resp.status();
+    let content_type = resp
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("application/octet-stream");
+    let content_type = super::ContentType::from(content_type);
+
+    if !status.is_client_error() && !status.is_server_error() {
+        let content = resp.text().await?;
+        match content_type {
+            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
+            ContentType::Text => {
+                return Err(Error::from(serde_json::Error::custom(
+                    "Received `text/plain` content type response that cannot be converted to `models::SagaSubmitted`",
+                )));
+            }
+            ContentType::Unsupported(unknown_type) => {
+                return Err(Error::from(serde_json::Error::custom(format!(
+                    "Received `{unknown_type}` content type response that cannot be converted to `models::SagaSubmitted`"
+                ))));
+            }
+        }
+    } else {
+        let content = resp.text().await?;
+        let entity: Option<StopApplicationError> = serde_json::from_str(&content).ok();
         Err(Error::ResponseError(ResponseContent {
             status,
             content,
