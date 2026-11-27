@@ -1,5 +1,5 @@
 use crate::harness::COMMAND_TIMEOUT;
-use tokio::io::{BufReader, Lines};
+use tokio::io::{AsyncWriteExt, BufReader, Lines};
 use tokio::process::{Child, ChildStdin, ChildStdout};
 use tokio::task::JoinHandle;
 
@@ -21,6 +21,23 @@ pub struct CliInvocation {
 impl CliInvocation {
     pub fn close_stdin(&mut self) {
         self.stdin = None;
+    }
+
+    pub async fn type_line(&mut self, text: &str) {
+        let stdin = self.stdin.as_mut().unwrap();
+        stdin
+            .write_all(format!("{text}\n").as_bytes())
+            .await
+            .unwrap();
+        stdin.flush().await.unwrap();
+    }
+
+    pub async fn stdout_line(&mut self) -> String {
+        match tokio::time::timeout(COMMAND_TIMEOUT, self.read_stdout_line()).await {
+            Ok(Some(line)) => line,
+            Ok(None) => panic!("stdout closed unexpectedly. output:\n{}", self.stdout_read),
+            Err(_) => panic!("stdout timed out. output:\n{}", self.stdout_read),
+        }
     }
 
     /// Wait for the binary to exit or the [`COMMAND_TIMEOUT`] to expire

@@ -1,5 +1,4 @@
-use crate::harness::cli_invocation::Outcome;
-use crate::harness::{CONSOLE_URL, CliInvocation};
+use crate::harness::{CONSOLE_URL, CliInvocation, Outcome};
 use std::process::Stdio;
 use tempfile::TempDir;
 use tokio::io::{AsyncBufReadExt, AsyncReadExt, BufReader};
@@ -66,5 +65,17 @@ impl CliSandbox {
         let mut running = self.spawn(args);
         running.close_stdin();
         running.finish().await
+    }
+
+    /// returns all the request bodies received by the mock server for a given route
+    pub async fn requests_for_route(&self, route: &str) -> Vec<serde_json::Value> {
+        self.api
+            .received_requests()
+            .await
+            .unwrap()
+            .iter()
+            .filter(|request| request.url.path() == route)
+            .map(|request| request.body_json().unwrap())
+            .collect()
     }
 }
