@@ -9,13 +9,8 @@ pub struct GalliumApiSuccessResponse {
     pub warnings: Option<Vec<models::CommandWarning>>,
     #[serde(rename = "message", skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-    #[serde(
-        rename = "command",
-        default,
-        with = "::serde_with::rust::double_option",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub command: Option<Option<Box<models::CommandSummary>>>,
+    #[serde(rename = "command", skip_serializing_if = "Option::is_none")]
+    pub command: Option<models::CommandSummary>,
 }
 
 impl GalliumApiSuccessResponse {

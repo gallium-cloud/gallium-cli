@@ -9,13 +9,8 @@ pub struct GalliumLoginRequest {
     pub email: String,
     #[serde(rename = "password")]
     pub password: String,
-    #[serde(
-        rename = "otp",
-        default,
-        with = "::serde_with::rust::double_option",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub otp: Option<Option<String>>,
+    #[serde(rename = "otp", skip_serializing_if = "Option::is_none")]
+    pub otp: Option<String>,
 }
 
 impl GalliumLoginRequest {

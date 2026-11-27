@@ -16,7 +16,7 @@ pub struct AppErrorResponseBody {
     #[serde(rename = "errorMap")]
     pub error_map: std::collections::HashMap<String, String>,
     #[serde(rename = "errCode")]
-    pub err_code: Box<models::ErrorCode>,
+    pub err_code: models::ErrorCode,
 }
 
 impl AppErrorResponseBody {
@@ -34,7 +34,7 @@ impl AppErrorResponseBody {
             status_code,
             error_id,
             error_map,
-            err_code: Box::new(err_code),
+            err_code,
         }
     }
 }

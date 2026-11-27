@@ -11,20 +11,10 @@ pub struct CommandSummary {
     pub status: models::ApiCmdStatus,
     #[serde(rename = "cmdType")]
     pub cmd_type: String,
-    #[serde(
-        rename = "progressMessage",
-        default,
-        with = "::serde_with::rust::double_option",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub progress_message: Option<Option<String>>,
-    #[serde(
-        rename = "failureReason",
-        default,
-        with = "::serde_with::rust::double_option",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub failure_reason: Option<Option<String>>,
+    #[serde(rename = "progressMessage", skip_serializing_if = "Option::is_none")]
+    pub progress_message: Option<String>,
+    #[serde(rename = "failureReason", skip_serializing_if = "Option::is_none")]
+    pub failure_reason: Option<String>,
 }
 
 impl CommandSummary {

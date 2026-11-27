@@ -4,12 +4,14 @@ use crate::models;
 use serde::{Deserialize, Serialize};
 
 ///
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
 pub enum JobOutcome {
     #[serde(rename = "Succeeded")]
     Succeeded,
     #[serde(rename = "Failed")]
     Failed,
+    #[serde(untagged)]
+    UnknownValue(String),
 }
 
 impl std::fmt::Display for JobOutcome {
@@ -17,6 +19,7 @@ impl std::fmt::Display for JobOutcome {
         match self {
             Self::Succeeded => write!(f, "Succeeded"),
             Self::Failed => write!(f, "Failed"),
+            Self::UnknownValue(value) => write!(f, "{value}"),
         }
     }
 }

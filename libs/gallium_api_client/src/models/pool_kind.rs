@@ -4,7 +4,7 @@ use crate::models;
 use serde::{Deserialize, Serialize};
 
 ///
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
 pub enum PoolKind {
     #[serde(rename = "all")]
     All,
@@ -12,6 +12,8 @@ pub enum PoolKind {
     System,
     #[serde(rename = "user")]
     User,
+    #[serde(untagged)]
+    UnknownValue(String),
 }
 
 impl std::fmt::Display for PoolKind {
@@ -20,6 +22,7 @@ impl std::fmt::Display for PoolKind {
             Self::All => write!(f, "all"),
             Self::System => write!(f, "system"),
             Self::User => write!(f, "user"),
+            Self::UnknownValue(value) => write!(f, "{value}"),
         }
     }
 }

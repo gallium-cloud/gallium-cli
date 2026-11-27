@@ -21,6 +21,9 @@ async fn main() -> Result<(), TaskError> {
         Some(Action::Generated(action)) => {
             crate::generated::run(&invocation.global_args, action).await
         }
+        Some(Action::AppSpec(command)) => {
+            crate::tasks::appspec::app_spec_main(&invocation.global_args, command).await
+        }
         Some(Action::Export(args)) => {
             crate::tasks::export::export_main(&invocation.global_args, args).await
         }
@@ -50,7 +53,7 @@ async fn main() -> Result<(), TaskError> {
                 Err(e) => return Err(e),
             };
             let login_resp = api_client.refresh_session().await?;
-            if let Some(org) = login_resp.org.flatten() {
+            if let Some(org) = login_resp.org {
                 println!("Logged in to Gallium org: {}", org.name);
             }
             if let Some(avail_orgs) = login_resp.available_orgs

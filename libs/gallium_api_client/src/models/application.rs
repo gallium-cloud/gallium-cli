@@ -6,9 +6,9 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Application {
     #[serde(rename = "metadata")]
-    pub metadata: Box<models::ApplicationMetadata>,
+    pub metadata: models::ApplicationMetadata,
     #[serde(rename = "status")]
-    pub status: Box<models::ApplicationStatus>,
+    pub status: models::ApplicationStatus,
 }
 
 impl Application {
@@ -16,9 +16,6 @@ impl Application {
         metadata: models::ApplicationMetadata,
         status: models::ApplicationStatus,
     ) -> Application {
-        Application {
-            metadata: Box::new(metadata),
-            status: Box::new(status),
-        }
+        Application { metadata, status }
     }
 }

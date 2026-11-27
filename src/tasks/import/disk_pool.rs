@@ -16,7 +16,7 @@ impl DiskPoolDetermination {
     fn from_summary(pool: &DiskPoolSummary, reason: &'static str) -> Self {
         DiskPoolDetermination {
             kube_name: pool.kube_name.clone(),
-            display_name: pool.name.clone().flatten(),
+            display_name: pool.name.clone(),
             reason,
         }
     }
@@ -37,7 +37,7 @@ pub async fn determine_disk_pool(
             ))
         } else if let Some(pool) = disk_pools
             .iter()
-            .find(|p| p.name.as_ref().and_then(|name| name.as_deref()) == Some(pool_arg))
+            .find(|p| p.name.as_deref() == Some(pool_arg))
         {
             Ok(DiskPoolDetermination::from_summary(
                 pool,

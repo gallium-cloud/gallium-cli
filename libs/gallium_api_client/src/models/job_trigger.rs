@@ -4,12 +4,14 @@ use crate::models;
 use serde::{Deserialize, Serialize};
 
 ///
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
 pub enum JobTrigger {
     #[serde(rename = "install")]
     Install,
     #[serde(rename = "deploy")]
     Deploy,
+    #[serde(untagged)]
+    UnknownValue(String),
 }
 
 impl std::fmt::Display for JobTrigger {
@@ -17,6 +19,7 @@ impl std::fmt::Display for JobTrigger {
         match self {
             Self::Install => write!(f, "install"),
             Self::Deploy => write!(f, "deploy"),
+            Self::UnknownValue(value) => write!(f, "{value}"),
         }
     }
 }

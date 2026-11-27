@@ -7,13 +7,8 @@ use serde::{Deserialize, Serialize};
 pub struct GalliumApiErrorResponse {
     #[serde(rename = "errors", skip_serializing_if = "Option::is_none")]
     pub errors: Option<std::collections::HashMap<String, String>>,
-    #[serde(
-        rename = "error",
-        default,
-        with = "::serde_with::rust::double_option",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub error: Option<Option<String>>,
+    #[serde(rename = "error", skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
     #[serde(rename = "errCode", skip_serializing_if = "Option::is_none")]
     pub err_code: Option<String>,
     #[serde(rename = "errorId", skip_serializing_if = "Option::is_none")]

@@ -259,7 +259,7 @@ pub async fn list_all_applications(
         req_builder = req_builder.query(&[("engineSlug", &param_value.to_string())]);
     }
     if let Some(ref param_value) = p_query_phase {
-        req_builder = req_builder.query(&[("phase", &serde_json::to_string(param_value)?)]);
+        req_builder = req_builder.query(&[("phase", &param_value.to_string())]);
     }
     if let Some(ref param_value) = p_query_application_id {
         req_builder = req_builder.query(&[("applicationId", &param_value.to_string())]);

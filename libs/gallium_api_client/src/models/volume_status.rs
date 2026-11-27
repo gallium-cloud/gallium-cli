@@ -8,14 +8,9 @@ pub struct VolumeStatus {
     #[serde(rename = "name")]
     pub name: String,
     #[serde(rename = "phase")]
-    pub phase: Box<models::VolumePhase>,
-    #[serde(
-        rename = "sizeBytes",
-        default,
-        with = "::serde_with::rust::double_option",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub size_bytes: Option<Option<i64>>,
+    pub phase: models::VolumePhase,
+    #[serde(rename = "sizeBytes", skip_serializing_if = "Option::is_none")]
+    pub size_bytes: Option<i64>,
     #[serde(rename = "mountedBy")]
     pub mounted_by: Vec<String>,
 }
@@ -24,7 +19,7 @@ impl VolumeStatus {
     pub fn new(name: String, phase: models::VolumePhase, mounted_by: Vec<String>) -> VolumeStatus {
         VolumeStatus {
             name,
-            phase: Box::new(phase),
+            phase,
             size_bytes: None,
             mounted_by,
         }

@@ -64,7 +64,7 @@ impl AuthSession {
             plain,
             GalliumTokenRequest {
                 refresh_token: self.refresh_token.clone(),
-                org_slug: self.org_slug.clone().map(Some),
+                org_slug: self.org_slug.clone(),
             },
         )
         .await

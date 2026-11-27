@@ -8,6 +8,8 @@ pub mod api_error;
 pub use self::api_error::ApiError;
 pub mod app_error_response_body;
 pub use self::app_error_response_body::AppErrorResponseBody;
+pub mod app_spec_validation;
+pub use self::app_spec_validation::AppSpecValidation;
 pub mod application;
 pub use self::application::Application;
 pub mod application_list_item;

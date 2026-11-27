@@ -5,27 +5,43 @@ use serde::{Deserialize, Serialize};
 
 /// ErrorCode : Citations for error code descriptions: * https://github.com/googleapis/googleapis/blob/master/google/rpc/code.proto * https://github.com/kubernetes/apimachinery/blob/master/pkg/apis/meta/v1/types.go * https://www.rfc-editor.org/rfc/rfc6750.html#section-3.1 * https://www.rfc-editor.org/rfc/rfc9110.html#section-15.5.10
 /// Citations for error code descriptions: * https://github.com/googleapis/googleapis/blob/master/google/rpc/code.proto * https://github.com/kubernetes/apimachinery/blob/master/pkg/apis/meta/v1/types.go * https://www.rfc-editor.org/rfc/rfc6750.html#section-3.1 * https://www.rfc-editor.org/rfc/rfc9110.html#section-15.5.10
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(untagged)]
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
 pub enum ErrorCode {
-    /// An unexpected server-side failure prevented the request from completing, and its outcome is undetermined.
-    String(String),
-    /// A request parameter is malformed or invalid, independent of the current state of the system.
-    String2(String),
-    /// The requested resource does not exist.
-    String3(String),
-    /// The request did not carry valid authentication credentials, so the caller could not be identified.
-    String4(String),
-    /// The access token presented with the request has expired; obtain a new token and retry.
-    String5(String),
-    /// The request conflicts with the current state of the target resource and must be altered before retrying.
-    String6(String),
-    /// The caller was identified but is not permitted to perform this operation.
-    String7(String),
+    #[serde(rename = "INTERNAL_ERROR")]
+    InternalError,
+    #[serde(rename = "INVALID_PARAM")]
+    InvalidParam,
+    #[serde(rename = "NOT_FOUND")]
+    NotFound,
+    #[serde(rename = "AUTHENTICATION_FAILED")]
+    AuthenticationFailed,
+    #[serde(rename = "TOKEN_EXPIRED")]
+    TokenExpired,
+    #[serde(rename = "PARAM_CONFLICT")]
+    ParamConflict,
+    #[serde(rename = "FORBIDDEN")]
+    Forbidden,
+    #[serde(untagged)]
+    UnknownValue(String),
+}
+
+impl std::fmt::Display for ErrorCode {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Self::InternalError => write!(f, "INTERNAL_ERROR"),
+            Self::InvalidParam => write!(f, "INVALID_PARAM"),
+            Self::NotFound => write!(f, "NOT_FOUND"),
+            Self::AuthenticationFailed => write!(f, "AUTHENTICATION_FAILED"),
+            Self::TokenExpired => write!(f, "TOKEN_EXPIRED"),
+            Self::ParamConflict => write!(f, "PARAM_CONFLICT"),
+            Self::Forbidden => write!(f, "FORBIDDEN"),
+            Self::UnknownValue(value) => write!(f, "{value}"),
+        }
+    }
 }
 
 impl Default for ErrorCode {
-    fn default() -> Self {
-        Self::String(Default::default())
+    fn default() -> ErrorCode {
+        Self::InternalError
     }
 }

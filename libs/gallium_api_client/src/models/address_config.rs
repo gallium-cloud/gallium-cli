@@ -10,21 +10,11 @@ pub struct AddressConfig {
     #[serde(rename = "dhcp", skip_serializing_if = "Option::is_none")]
     pub dhcp: Option<bool>,
     /// IP address
-    #[serde(
-        rename = "ip",
-        default,
-        with = "::serde_with::rust::double_option",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub ip: Option<Option<String>>,
+    #[serde(rename = "ip", skip_serializing_if = "Option::is_none")]
+    pub ip: Option<String>,
     /// Default gateway associated with interface
-    #[serde(
-        rename = "gateway",
-        default,
-        with = "::serde_with::rust::double_option",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub gateway: Option<Option<String>>,
+    #[serde(rename = "gateway", skip_serializing_if = "Option::is_none")]
+    pub gateway: Option<String>,
 }
 
 impl AddressConfig {

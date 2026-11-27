@@ -114,7 +114,7 @@ pub async fn get_container_logs(
         req_builder = req_builder.query(&[("tail", &param_value.to_string())]);
     }
     if let Some(ref param_value) = p_query_since {
-        req_builder = req_builder.query(&[("since", &param_value.to_string())]);
+        req_builder = req_builder.query(&[("since", &param_value.to_rfc3339())]);
     }
     if let Some(ref user_agent) = configuration.user_agent {
         req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());

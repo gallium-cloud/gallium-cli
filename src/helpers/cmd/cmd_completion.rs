@@ -38,8 +38,13 @@ async fn poll_until_complete(api_client: &ApiClient, command_slug: &str) -> Resu
                     slug: summary.command_slug,
                     reason: summary
                         .failure_reason
-                        .flatten()
                         .unwrap_or_else(|| "unknown failure reason".to_string()),
+                });
+            }
+            ApiCmdStatus::UnknownValue(status) => {
+                return Err(TaskError::CommandStatusUnknown {
+                    slug: summary.command_slug,
+                    status,
                 });
             }
             ApiCmdStatus::Pending | ApiCmdStatus::InProgress => {

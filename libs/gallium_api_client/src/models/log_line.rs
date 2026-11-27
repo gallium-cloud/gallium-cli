@@ -5,13 +5,8 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LogLine {
-    #[serde(
-        rename = "timestamp",
-        default,
-        with = "::serde_with::rust::double_option",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub timestamp: Option<Option<chrono::DateTime<chrono::FixedOffset>>>,
+    #[serde(rename = "timestamp", skip_serializing_if = "Option::is_none")]
+    pub timestamp: Option<chrono::DateTime<chrono::FixedOffset>>,
     #[serde(rename = "text")]
     pub text: String,
 }

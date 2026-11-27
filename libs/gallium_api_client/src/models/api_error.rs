@@ -9,13 +9,8 @@ pub struct ApiError {
     pub code: String,
     #[serde(rename = "message")]
     pub message: String,
-    #[serde(
-        rename = "requestId",
-        default,
-        with = "::serde_with::rust::double_option",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub request_id: Option<Option<String>>,
+    #[serde(rename = "requestId", skip_serializing_if = "Option::is_none")]
+    pub request_id: Option<String>,
     #[serde(rename = "issues", skip_serializing_if = "Option::is_none")]
     pub issues: Option<Vec<models::Issue>>,
 }

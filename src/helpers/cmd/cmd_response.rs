@@ -37,6 +37,12 @@ pub async fn poll_for_cmd_response<T: DeserializeOwned>(
                     cmd_type: details_response.cmd_type.clone(),
                 });
             }
+            ApiCmdStatus::UnknownValue(status) => {
+                return Err(TaskError::CommandStatusUnknown {
+                    slug: details_response.command_slug.clone(),
+                    status,
+                });
+            }
             ApiCmdStatus::Pending | ApiCmdStatus::InProgress => {
                 tokio::time::sleep(std::time::Duration::from_secs(2)).await;
             }
