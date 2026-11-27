@@ -55,6 +55,17 @@ pub enum TaskError {
     #[snafu(display("Command {slug} failed: {cmd_type}"))]
     CommandFailure { slug: String, cmd_type: String },
 
+    #[snafu(display("App {name} not found"))]
+    AppNotFound { name: String },
+
+    #[snafu(display("App {name} is ambiguous. Pass --engine {engines}"))]
+    AppNameAmbiguous { name: String, engines: String },
+
+    #[snafu(display(
+        "Engine must be specified explicitly when working with machine-readable output"
+    ))]
+    MustSpecifyEngine,
+
     #[snafu(display("{} is not a valid AppSpec", path.display()))]
     AppSpecInvalid { path: PathBuf },
 
