@@ -132,6 +132,7 @@ impl From<&str> for ContentType {
     }
 }
 
+pub mod app_spec_api;
 pub mod applications_api;
 pub mod cluster_virtual_machine_api;
 pub mod cluster_volume_api;
